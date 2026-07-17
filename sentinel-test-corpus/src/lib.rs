@@ -33,7 +33,10 @@ mod tests {
             "SC-TRAIT",
             "SC-READONLY",
         ] {
-            assert!(rule_ids.contains(expected), "missing finding for {expected}");
+            assert!(
+                rule_ids.contains(expected),
+                "missing finding for {expected}"
+            );
         }
     }
 

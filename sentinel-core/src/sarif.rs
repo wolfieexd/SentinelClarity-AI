@@ -67,7 +67,13 @@ impl SarifReport {
         let run = &mut report.runs[0];
 
         for finding in findings {
-            if !run.tool.driver.rules.iter().any(|rule| rule.id == finding.rule_id) {
+            if !run
+                .tool
+                .driver
+                .rules
+                .iter()
+                .any(|rule| rule.id == finding.rule_id)
+            {
                 run.tool.driver.rules.push(SarifRule {
                     id: finding.rule_id.clone(),
                     name: finding.rule_id.clone(),

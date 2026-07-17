@@ -178,9 +178,7 @@ fn render_markdown(
 
 fn has_blocking_findings(findings: &[Finding], fail_on: &str) -> bool {
     let threshold = parse_severity(fail_on);
-    findings
-        .iter()
-        .any(|finding| finding.severity >= threshold)
+    findings.iter().any(|finding| finding.severity >= threshold)
 }
 
 fn parse_severity(value: &str) -> Severity {

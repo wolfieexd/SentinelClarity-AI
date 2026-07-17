@@ -1,6 +1,6 @@
 use sentinel_core::{
-    Annotation, CallTarget, Expr, Function, LanguageAdapter, ParseError, Param, Span, StorageOp,
-    Stmt, UniversalAST, UniversalNode, Visibility,
+    Annotation, CallTarget, Expr, Function, LanguageAdapter, Param, ParseError, Span, Stmt,
+    StorageOp, UniversalAST, UniversalNode, Visibility,
 };
 
 #[derive(Debug, Default)]
@@ -14,7 +14,9 @@ impl LanguageAdapter for ClarityAdapter {
 
 pub fn parse_clarity(source: &str) -> Result<UniversalAST, ParseError> {
     if source.trim().is_empty() {
-        return Err(ParseError::InvalidSource("empty Clarity source".to_string()));
+        return Err(ParseError::InvalidSource(
+            "empty Clarity source".to_string(),
+        ));
     }
 
     let functions = extract_functions(source);

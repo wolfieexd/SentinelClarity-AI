@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use sentinel_core::{Finding, FixContext, FixError, FixGenerator, FixPackage};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriageResult {

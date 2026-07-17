@@ -269,7 +269,9 @@ mod tests {
     #[test]
     fn detects_read_only_mutation() {
         let results = findings("(define-read-only (balance) (begin (var-set total u1) (ok u1)))");
-        assert!(results.iter().any(|finding| finding.rule_id == "SC-READONLY"));
+        assert!(results
+            .iter()
+            .any(|finding| finding.rule_id == "SC-READONLY"));
     }
 
     #[test]
