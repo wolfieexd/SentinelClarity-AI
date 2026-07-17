@@ -19,7 +19,7 @@ enum Command {
     Scan {
         #[arg(default_value = ".")]
         path: PathBuf,
-        #[arg(long, value_enum, default_value_t = OutputFormat::Sarif)]
+        #[arg(long, value_enum, default_value = "sarif")]
         format: OutputFormat,
         #[arg(long)]
         output: Option<PathBuf>,
@@ -118,11 +118,13 @@ fn scan_path(path: &Path) -> Result<Vec<Finding>> {
 
 fn clarity_files(path: &Path) -> Result<Vec<PathBuf>> {
     if path.is_file() {
-        return Ok(if path.extension().and_then(|ext| ext.to_str()) == Some("clar") {
-            vec![path.to_path_buf()]
-        } else {
-            Vec::new()
-        });
+        return Ok(
+            if path.extension().and_then(|ext| ext.to_str()) == Some("clar") {
+                vec![path.to_path_buf()]
+            } else {
+                Vec::new()
+            },
+        );
     }
 
     let files = WalkDir::new(path)

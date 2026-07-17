@@ -47,7 +47,9 @@ mod tests {
             .filter_map(|entry| entry.ok())
             .filter(|entry| entry.file_type().is_file())
             .map(|entry| entry.into_path())
-            .filter(|path| path.file_name().and_then(|name| name.to_str()) == Some("vulnerable.clar"))
+            .filter(|path| {
+                path.file_name().and_then(|name| name.to_str()) == Some("vulnerable.clar")
+            })
             .collect()
     }
 }

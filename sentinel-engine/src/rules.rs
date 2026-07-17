@@ -260,8 +260,9 @@ mod tests {
 
     #[test]
     fn detects_access_control() {
-        let results =
-            findings("(define-public (set-owner (new principal)) (begin (var-set owner new) (ok true)))");
+        let results = findings(
+            "(define-public (set-owner (new principal)) (begin (var-set owner new) (ok true)))",
+        );
         assert!(results.iter().any(|finding| finding.rule_id == "SC-ACCESS"));
     }
 
@@ -273,8 +274,9 @@ mod tests {
 
     #[test]
     fn detects_unchecked_call() {
-        let results =
-            findings("(define-public (pay) (contract-call? .token transfer u1 tx-sender contract-caller))");
+        let results = findings(
+            "(define-public (pay) (contract-call? .token transfer u1 tx-sender contract-caller))",
+        );
         assert!(results
             .iter()
             .any(|finding| finding.rule_id == "SC-UNCHECKED"));
