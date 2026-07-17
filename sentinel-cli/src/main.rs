@@ -64,12 +64,9 @@ fn main() -> Result<()> {
             let report = SarifReport::from_findings(findings.clone());
             let rendered = match format {
                 OutputFormat::Sarif | OutputFormat::Json => serde_json::to_string_pretty(&report)?,
-                OutputFormat::Markdown => render_markdown(
-                    &path,
-                    config.as_ref().map(PathBuf::as_path),
-                    &fail_on,
-                    &findings,
-                ),
+                OutputFormat::Markdown => {
+                    render_markdown(&path, config.as_deref(), &fail_on, &findings)
+                }
             };
 
             if let Some(output) = output {

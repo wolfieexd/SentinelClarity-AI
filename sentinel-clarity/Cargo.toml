@@ -7,4 +7,3 @@ repository.workspace = true
 
 [dependencies]
 sentinel-core.workspace = true
-tree-sitter.workspace = true
