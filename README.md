@@ -41,15 +41,15 @@ This repository is in Sprint 2 of the OpenAI Build Week implementation plan. The
 
 ```text
 sentinel-clarity/
-├── sentinel-core/         # Universal AST, traits, findings, SARIF primitives
-├── sentinel-clarity/      # Clarity language adapter
-├── sentinel-engine/       # Rule registry and scanner orchestration
-├── sentinel-ai/           # Triage result types and Codex fix generator interface
-├── sentinel-cli/          # CLI entrypoint and command surface
-├── sentinel-action/       # GitHub Action wrapper metadata
-├── sentinel-test-corpus/  # Contract corpus and expected finding fixtures
-├── docs/                  # ADRs and rule documentation
-└── sentinel.toml          # Default scanner configuration
+|-- sentinel-core/         # Universal AST, traits, findings, SARIF primitives
+|-- sentinel-clarity/      # Clarity language adapter
+|-- sentinel-engine/       # Rule registry and scanner orchestration
+|-- sentinel-ai/           # Triage result types and Codex fix generator interface
+|-- sentinel-cli/          # CLI entrypoint and command surface
+|-- sentinel-action/       # GitHub Action wrapper metadata
+|-- sentinel-test-corpus/  # Contract corpus and expected finding fixtures
+|-- docs/                  # ADRs and rule documentation
+`-- sentinel.toml          # Default scanner configuration
 ```
 
 ## Architecture
@@ -200,6 +200,49 @@ The current development environment used for the initial scaffold did not have `
 | Sprint 1 | Parser, rule engine, six security rules | Heuristic scanner, fixtures, docs |
 | Sprint 2 | GPT triage, Codex fix generation, PR bot | Offline triage, fix templates, CLI output |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
+
+## Sprint Checklist
+
+### Sprint 0 - Inception and Architecture
+
+- [x] Create Rust workspace and crate layout.
+- [x] Add core traits for language adapters, rules, and fix generation.
+- [x] Add SARIF report scaffolding.
+- [x] Add CLI, GitHub Action, and CI workflow skeletons.
+- [x] Add default `sentinel.toml`, README, ADR, changelog, and session log.
+- [x] Push Sprint 0 checkpoint to GitHub.
+
+### Sprint 1 - Core Engine
+
+- [x] Add lightweight Clarity function and operation extraction.
+- [x] Implement rule registry and scanner orchestration.
+- [x] Add six heuristic security rules.
+- [x] Add markdown, JSON, and SARIF scan output paths.
+- [x] Add handcrafted vulnerable and fixed corpus fixtures.
+- [x] Add rule documentation pages.
+- [x] Keep CI green across Ubuntu, macOS, and Windows.
+- [x] Push Sprint 1 checkpoint to GitHub.
+
+### Sprint 2 - AI Pipeline
+
+- [x] Add triage context builder.
+- [x] Add `TriageClient` interface for future OpenAI-backed triage.
+- [x] Add deterministic offline triage engine.
+- [x] Add exploitability, blast radius, root cause, strategy, confidence, and references.
+- [x] Add Codex fix-package templates for fixable rules.
+- [x] Add `scan --triage --format markdown`.
+- [x] Keep CI green across Ubuntu, macOS, and Windows.
+- [x] Push Sprint 2 checkpoint to GitHub.
+
+### Sprint 3 - Polish and Submission
+
+- [ ] Improve error UX and configuration validation.
+- [ ] Expand corpus coverage beyond handcrafted fixtures.
+- [ ] Add performance and security hardening checks.
+- [ ] Prepare demo script and recording assets.
+- [ ] Finalize README submission metadata.
+- [ ] Confirm all CI gates are green.
+- [ ] Submit Devpost package.
 
 ## OpenAI Build Week 2026
 
