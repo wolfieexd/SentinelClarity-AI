@@ -1,0 +1,35 @@
+name: SentinelClarity
+
+on:
+  pull_request:
+    paths:
+      - "**/*.clar"
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build scanner
+        run: cargo build --release --package sentinel-cli
+      - name: Run SentinelClarity
+        run: ./target/release/sentinel-clarity scan . --format sarif --output sentinel-results.sarif
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sentinel-results.sarif
+      - name: Comment summary
+        uses: peter-evans/create-or-update-comment@v4
+        if: github.event_name == 'pull_request'
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            SentinelClarity scan completed.
+
+            The Sprint 0 action template builds the scanner, uploads SARIF, and is ready for Sprint 2 PR annotations.

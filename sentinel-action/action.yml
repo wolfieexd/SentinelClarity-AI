@@ -1,0 +1,26 @@
+name: SentinelClarity
+description: Scan Clarity smart contracts with SentinelClarity
+inputs:
+  config:
+    description: Path to sentinel.toml
+    required: false
+    default: sentinel.toml
+  format:
+    description: Output format
+    required: false
+    default: sarif
+  fail-on:
+    description: Minimum severity that fails the workflow
+    required: false
+    default: HIGH
+  token:
+    description: GitHub token for PR comments and annotations
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: cargo build --release --package sentinel-cli
+    - shell: bash
+      run: ./target/release/sentinel-clarity scan . --config "${{ inputs.config }}" --format "${{ inputs.format }}" --fail-on "${{ inputs.fail-on }}"
