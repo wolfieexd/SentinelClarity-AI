@@ -177,6 +177,7 @@ version = "0.1.0"
 dependencies = [
  "sentinel-core",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -192,6 +193,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "sentinel-ai",
  "sentinel-clarity",
  "sentinel-core",
  "sentinel-engine",

@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
+use sentinel_ai::{ContextBuilder, HeuristicTriageClient, TriageEngine, TriagedFinding};
 use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
 use sentinel_engine::{default_registry, Scanner};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -27,6 +29,8 @@ enum Command {
         config: Option<PathBuf>,
         #[arg(long, default_value = "HIGH")]
         fail_on: String,
+        #[arg(long)]
+        triage: bool,
     },
     Serve {
         #[arg(long, default_value_t = 8080)]
@@ -59,11 +63,20 @@ fn main() -> Result<()> {
             output,
             config,
             fail_on,
+            triage,
         } => {
-            let findings = scan_path(&path)?;
+            let scan_results = scan_path(&path)?;
+            let findings = scan_results
+                .iter()
+                .flat_map(|result| result.findings.clone())
+                .collect::<Vec<_>>();
             let report = SarifReport::from_findings(findings.clone());
             let rendered = match format {
                 OutputFormat::Sarif | OutputFormat::Json => serde_json::to_string_pretty(&report)?,
+                OutputFormat::Markdown if triage => {
+                    let triaged = triage_results(&scan_results)?;
+                    render_triage_markdown(&path, config.as_deref(), &fail_on, &triaged)
+                }
                 OutputFormat::Markdown => {
                     render_markdown(&path, config.as_deref(), &fail_on, &findings)
                 }
@@ -96,21 +109,27 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn scan_path(path: &Path) -> Result<Vec<Finding>> {
+#[derive(Debug)]
+struct FileScanResult {
+    source: String,
+    findings: Vec<Finding>,
+}
+
+fn scan_path(path: &Path) -> Result<Vec<FileScanResult>> {
     let scanner = Scanner::new(ClarityAdapter, default_registry());
-    let mut findings = Vec::new();
+    let mut results = Vec::new();
 
     for file in clarity_files(path)? {
         let source = std::fs::read_to_string(&file)
             .with_context(|| format!("failed to read {}", file.display()))?;
-        findings.extend(
-            scanner
-                .scan_findings(&source)
-                .with_context(|| format!("failed to parse {}", file.display()))?,
-        );
+        let findings = scanner
+            .scan_findings(&source)
+            .with_context(|| format!("failed to parse {}", file.display()))?;
+
+        results.push(FileScanResult { source, findings });
     }
 
-    Ok(findings)
+    Ok(results)
 }
 
 fn clarity_files(path: &Path) -> Result<Vec<PathBuf>> {
@@ -171,6 +190,94 @@ fn render_markdown(
     }
 
     output
+}
+
+fn triage_results(scan_results: &[FileScanResult]) -> Result<Vec<TriagedFinding>> {
+    let engine = TriageEngine::new(
+        HeuristicTriageClient,
+        ContextBuilder::new(default_rule_docs()),
+    );
+    let mut triaged = Vec::new();
+
+    for result in scan_results {
+        triaged.extend(engine.run(result.findings.clone(), &result.source)?);
+    }
+
+    Ok(triaged)
+}
+
+fn render_triage_markdown(
+    path: &Path,
+    config: Option<&Path>,
+    fail_on: &str,
+    findings: &[TriagedFinding],
+) -> String {
+    let mut output = format!(
+        "# SentinelClarity AI Triage\n\nPath: `{}`\nConfig: `{}`\nFail on: `{}`\nFindings: {}\n\n",
+        path.display(),
+        config
+            .map(|path| path.display().to_string())
+            .unwrap_or_else(|| "sentinel.toml".to_string()),
+        fail_on,
+        findings.len()
+    );
+
+    if findings.is_empty() {
+        output.push_str("No findings detected.\n");
+        return output;
+    }
+
+    output.push_str("| Rule | Exploitability | Blast Radius | Strategy | Confidence |\n");
+    output.push_str("| --- | --- | --- | --- | --- |\n");
+
+    for triaged in findings {
+        output.push_str(&format!(
+            "| `{}` | {:?} | {:?} | {:?} | {:.0}% |\n",
+            triaged.finding.rule_id,
+            triaged.triage.exploitability,
+            triaged.triage.blast_radius,
+            triaged.triage.fix_strategy,
+            triaged.triage.fix_confidence * 100.0
+        ));
+    }
+
+    output.push_str("\n## Fix Packages\n\n");
+
+    for triaged in findings.iter().filter(|triaged| triaged.fix.is_some()) {
+        let fix = triaged.fix.as_ref().expect("filtered to Some");
+        output.push_str(&format!(
+            "### `{}`\n\n{}\n\n- Patch plan: {}\n- Test plan: {}\n\n",
+            triaged.finding.rule_id, fix.explanation, fix.patch, fix.test_patch
+        ));
+    }
+
+    output
+}
+
+fn default_rule_docs() -> BTreeMap<String, String> {
+    [
+        (
+            "SC-REENTRANCY",
+            include_str!("../../docs/rules/SC-REENTRANCY.md"),
+        ),
+        ("SC-ACCESS", include_str!("../../docs/rules/SC-ACCESS.md")),
+        (
+            "SC-OVERFLOW",
+            include_str!("../../docs/rules/SC-OVERFLOW.md"),
+        ),
+        (
+            "SC-UNCHECKED",
+            include_str!("../../docs/rules/SC-UNCHECKED.md"),
+        ),
+        ("SC-TRAIT", include_str!("../../docs/rules/SC-TRAIT.md")),
+        (
+            "SC-READONLY",
+            include_str!("../../docs/rules/SC-READONLY.md"),
+        ),
+    ]
+    .into_iter()
+    .map(|(rule_id, doc)| (rule_id.to_string(), doc.to_string()))
+    .collect()
 }
 
 fn has_blocking_findings(findings: &[Finding], fail_on: &str) -> bool {

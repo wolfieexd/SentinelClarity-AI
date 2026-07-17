@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+sentinel-ai.workspace = true
 sentinel-clarity.workspace = true
 sentinel-core.workspace = true
 sentinel-engine.workspace = true

@@ -23,7 +23,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository is in Sprint 1 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, and rule documentation are in place. Full parser-backed type analysis, mainnet corpus expansion, AI triage, and PR automation are planned for the next sprints.
+This repository is in Sprint 2 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, rule documentation, offline triage engine, and fix-package templates are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation are planned for the next sprints.
 
 | Area | Status |
 | --- | --- |
@@ -34,7 +34,7 @@ This repository is in Sprint 1 of the OpenAI Build Week implementation plan. The
 | Rule engine | Six heuristic rules registered |
 | CLI | Scans `.clar` files and directories |
 | GitHub Action | Template scaffolded |
-| AI triage and fixes | Type scaffold |
+| AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted vulnerable/fixed fixtures |
 
 ## Repository Layout
@@ -91,6 +91,7 @@ The CLI binary is named `sentinel-clarity`.
 ```bash
 cargo run --package sentinel-cli -- scan . --format sarif
 cargo run --package sentinel-cli -- scan ./contracts --format markdown
+cargo run --package sentinel-cli -- scan ./contracts --format markdown --triage
 cargo run --package sentinel-cli -- init
 cargo run --package sentinel-cli -- test-corpus --all
 ```
@@ -156,6 +157,29 @@ The intended workflow is:
 4. Post a pull request summary.
 5. In later sprints, open annotated fix PRs and verify fixes with a re-scan.
 
+## AI Triage
+
+Sprint 2 adds a deterministic triage engine that mirrors the planned structured AI response shape without requiring network credentials during CI.
+
+For each finding, triage produces:
+
+- Exploitability classification
+- Blast radius
+- Root cause
+- Fix strategy
+- Confidence score
+- Developer-facing explanation
+- References
+- Optional fix package plan
+
+Run triage locally with:
+
+```bash
+cargo run --package sentinel-cli -- scan sentinel-test-corpus/contracts --format markdown --triage
+```
+
+The current implementation uses `HeuristicTriageClient` behind the `TriageClient` trait. A live OpenAI client can be added behind that interface without changing scanner output contracts.
+
 ## Development
 
 Install Rust, then run:
@@ -174,7 +198,7 @@ The current development environment used for the initial scaffold did not have `
 | --- | --- | --- |
 | Sprint 0 | Inception, architecture, workspace scaffold | Repo structure, CI, ADR |
 | Sprint 1 | Parser, rule engine, six security rules | Heuristic scanner, fixtures, docs |
-| Sprint 2 | GPT triage, Codex fix generation, PR bot | End-to-end scan to fix PR |
+| Sprint 2 | GPT triage, Codex fix generation, PR bot | Offline triage, fix templates, CLI output |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
 
 ## OpenAI Build Week 2026

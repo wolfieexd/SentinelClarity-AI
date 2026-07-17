@@ -15,3 +15,6 @@ The format is based on Keep a Changelog.
 - CLI scanning for `.clar` files and directories with SARIF, JSON, and markdown output.
 - Handcrafted vulnerable and fixed corpus fixtures for each rule.
 - Rule documentation pages under `docs/rules/`.
+- Sprint 2 offline triage engine with exploitability, blast radius, root cause, fix strategy, confidence, and references.
+- Fix-package templates for access control, overflow, unchecked calls, and read-only violations.
+- `sentinel-clarity scan --triage --format markdown` output.
