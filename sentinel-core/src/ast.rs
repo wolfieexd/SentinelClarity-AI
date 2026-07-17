@@ -5,6 +5,7 @@ pub type FileId = String;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UniversalAST {
     pub file_id: FileId,
+    pub source: String,
     pub nodes: Vec<UniversalNode>,
 }
 
@@ -12,8 +13,34 @@ impl UniversalAST {
     pub fn new(file_id: impl Into<FileId>) -> Self {
         Self {
             file_id: file_id.into(),
+            source: String::new(),
             nodes: Vec::new(),
         }
+    }
+
+    pub fn with_source(file_id: impl Into<FileId>, source: impl Into<String>) -> Self {
+        Self {
+            file_id: file_id.into(),
+            source: source.into(),
+            nodes: Vec::new(),
+        }
+    }
+
+    pub fn functions(&self) -> Vec<&Function> {
+        let mut functions = Vec::new();
+
+        for node in &self.nodes {
+            match node {
+                UniversalNode::Contract {
+                    functions: contract_functions,
+                    ..
+                } => functions.extend(contract_functions),
+                UniversalNode::Function(function) => functions.push(function),
+                _ => {}
+            }
+        }
+
+        functions
     }
 }
 

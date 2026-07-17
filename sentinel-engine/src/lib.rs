@@ -1,3 +1,5 @@
+pub mod rules;
+
 use sentinel_core::{Finding, LanguageAdapter, SarifReport, SecurityRule};
 
 #[derive(Default)]
@@ -19,6 +21,17 @@ impl RuleRegistry {
     }
 }
 
+pub fn default_registry() -> RuleRegistry {
+    let mut registry = RuleRegistry::new();
+    registry.register(rules::ReentrancyRule);
+    registry.register(rules::AccessControlRule);
+    registry.register(rules::OverflowRule);
+    registry.register(rules::UncheckedCallRule);
+    registry.register(rules::TraitRule);
+    registry.register(rules::ReadOnlyRule);
+    registry
+}
+
 pub struct Scanner<A> {
     adapter: A,
     registry: RuleRegistry,
@@ -36,5 +49,10 @@ where
         let ast = self.adapter.parse(source)?;
         let findings = self.registry.visit_all(&ast);
         Ok(self.adapter.to_sarif(findings))
+    }
+
+    pub fn scan_findings(&self, source: &str) -> Result<Vec<Finding>, sentinel_core::ParseError> {
+        let ast = self.adapter.parse(source)?;
+        Ok(self.registry.visit_all(&ast))
     }
 }

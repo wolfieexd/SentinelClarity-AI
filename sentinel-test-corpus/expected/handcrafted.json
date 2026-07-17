@@ -1,0 +1,10 @@
+{
+  "contracts": [
+    { "path": "handcrafted/reentrancy/vulnerable.clar", "rule_id": "SC-REENTRANCY", "count": 1, "severity": "critical" },
+    { "path": "handcrafted/access/vulnerable.clar", "rule_id": "SC-ACCESS", "count": 1, "severity": "high" },
+    { "path": "handcrafted/overflow/vulnerable.clar", "rule_id": "SC-OVERFLOW", "count": 1, "severity": "high" },
+    { "path": "handcrafted/unchecked/vulnerable.clar", "rule_id": "SC-UNCHECKED", "count": 1, "severity": "medium" },
+    { "path": "handcrafted/trait/vulnerable.clar", "rule_id": "SC-TRAIT", "count": 1, "severity": "medium" },
+    { "path": "handcrafted/readonly/vulnerable.clar", "rule_id": "SC-READONLY", "count": 1, "severity": "high" }
+  ]
+}

@@ -23,19 +23,19 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository is in Sprint 0 of the OpenAI Build Week implementation plan. The workspace scaffold, architecture boundaries, CI templates, configuration schema, and documentation skeleton are in place. Rule implementations, Clarity parsing depth, AI triage, and PR automation are planned for the next sprints.
+This repository is in Sprint 1 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, and rule documentation are in place. Full parser-backed type analysis, mainnet corpus expansion, AI triage, and PR automation are planned for the next sprints.
 
 | Area | Status |
 | --- | --- |
 | Rust workspace | Scaffolded |
-| Universal AST and traits | Scaffolded |
+| Universal AST and traits | Implemented foundation |
 | SARIF model | Scaffolded |
-| Clarity adapter | Parser stub |
-| Rule engine | Registry and scanner scaffold |
-| CLI | Command surface scaffolded |
+| Clarity adapter | Lightweight function and operation extraction |
+| Rule engine | Six heuristic rules registered |
+| CLI | Scans `.clar` files and directories |
 | GitHub Action | Template scaffolded |
 | AI triage and fixes | Type scaffold |
-| Test corpus | Crate scaffold |
+| Test corpus | Handcrafted vulnerable/fixed fixtures |
 
 ## Repository Layout
 
@@ -142,7 +142,7 @@ fail_on_severity = "high"
 | `SC-TRAIT` | Trait implementation and signature mismatches | Medium |
 | `SC-READONLY` | State mutation from read-only functions | High |
 
-Each rule will ship with vulnerable and fixed fixtures, integration coverage, SARIF output checks, and documentation under `docs/rules/`.
+Each Sprint 1 rule ships with handcrafted vulnerable and fixed fixtures plus documentation under `docs/rules/`. Parser-backed precision and larger real-world corpus coverage are planned next.
 
 ## GitHub Action
 
@@ -173,7 +173,7 @@ The current development environment used for the initial scaffold did not have `
 | Sprint | Focus | Gate |
 | --- | --- | --- |
 | Sprint 0 | Inception, architecture, workspace scaffold | Repo structure, CI, ADR |
-| Sprint 1 | Parser, rule engine, six security rules | Green tests and valid SARIF |
+| Sprint 1 | Parser, rule engine, six security rules | Heuristic scanner, fixtures, docs |
 | Sprint 2 | GPT triage, Codex fix generation, PR bot | End-to-end scan to fix PR |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
 

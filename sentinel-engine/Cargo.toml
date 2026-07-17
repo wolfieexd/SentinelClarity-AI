@@ -7,3 +7,6 @@ repository.workspace = true
 
 [dependencies]
 sentinel-core.workspace = true
+
+[dev-dependencies]
+sentinel-clarity.workspace = true

@@ -9,4 +9,6 @@ repository.workspace = true
 glob.workspace = true
 
 [dev-dependencies]
+sentinel-clarity.workspace = true
+sentinel-engine.workspace = true
 walkdir.workspace = true
