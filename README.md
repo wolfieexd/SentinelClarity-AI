@@ -132,8 +132,8 @@ Planned production commands:
 | `scan [PATH]` | Scan Clarity contracts and emit SARIF, JSON, or markdown |
 | `init` | Print a default `sentinel.toml` or validate an existing config |
 | `completions <SHELL>` | Generate shell completions for Bash, Zsh, Fish, PowerShell, or Elvish |
-| `test-corpus` | Run curated contract fixtures against expected findings |
-| `serve` | Start an HTTP API for editor and IDE integration |
+| `test-corpus` | Select curated corpus fixtures; full expected-finding runner lives in Rust tests |
+| `serve` | Print the HTTP API scaffold target for future editor and IDE integration |
 | `version` | Print the CLI version |
 
 ## Configuration
