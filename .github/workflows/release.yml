@@ -30,7 +30,7 @@ jobs:
             binary: target/release/sentinel-clarity.exe
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build --locked --release --package sentinel-cli
