@@ -27,7 +27,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository is in Sprint 3 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, and demo script are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future hardening work.
+This repository is in Sprint 4 hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
 
 | Area | Status |
 | --- | --- |
@@ -36,7 +36,7 @@ This repository is in Sprint 3 of the OpenAI Build Week implementation plan. The
 | SARIF model | Scaffolded |
 | Clarity adapter | Lightweight function and operation extraction |
 | Rule engine | Six heuristic rules registered |
-| CLI | Scans `.clar` files, validates config, and generates completions |
+| CLI | Scans `.clar` files, validates config, verifies fixes, serves health endpoints, and generates completions |
 | GitHub Action | Template scaffolded |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
@@ -104,6 +104,7 @@ cargo run --package sentinel-cli -- init
 cargo run --package sentinel-cli -- init --validate --config sentinel.toml
 cargo run --package sentinel-cli -- completions powershell
 cargo run --package sentinel-cli -- test-corpus --all
+cargo run --package sentinel-cli -- verify-fix --before sentinel-test-corpus/contracts/handcrafted/reentrancy/vulnerable.clar --after sentinel-test-corpus/contracts/handcrafted/reentrancy/fixed.clar --clears SC-REENTRANCY
 ./scripts/security-check.sh
 ```
 
@@ -134,8 +135,9 @@ Planned production commands:
 | `scan [PATH]` | Scan Clarity contracts and emit SARIF, JSON, or markdown |
 | `init` | Print a default `sentinel.toml` or validate an existing config |
 | `completions <SHELL>` | Generate shell completions for Bash, Zsh, Fish, PowerShell, or Elvish |
-| `test-corpus` | Select curated corpus fixtures; full expected-finding runner lives in Rust tests |
-| `serve` | Print the HTTP API scaffold target for future editor and IDE integration |
+| `test-corpus` | Run curated corpus expectations for all rules or a selected rule |
+| `verify-fix` | Compare vulnerable and fixed contracts and assert selected findings are cleared |
+| `serve` | Start a minimal local HTTP API with `/health` and `/version` |
 | `version` | Print the CLI version |
 
 ## Configuration
@@ -256,6 +258,7 @@ SentinelClarity is a polished hackathon MVP, not a complete audit replacement.
 - Live OpenAI API triage is not connected yet; offline triage mirrors the planned response shape.
 - PR automation is represented by fix-package templates and a mock remediation plan.
 - The corpus includes handcrafted, demo, and regression fixtures, but not a large labeled mainnet dataset.
+- The HTTP API currently exposes health/version endpoints only; scan endpoints remain future work.
 - Findings should be reviewed by developers or auditors before production decisions.
 
 ## Security Testing
@@ -347,16 +350,15 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 1 | Parser, rule engine, six security rules | Heuristic scanner, fixtures, docs |
 | Sprint 2 | GPT triage, Codex fix generation, PR bot | Offline triage, fix templates, CLI output |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
-| Sprint 4 | Production hardening | Live OpenAI triage, parser precision, PR automation |
+| Sprint 4 | Production hardening | Security workflow, corpus runner, fix verification, health API |
 
-## Future Sprint 4
+## Future Production Hardening
 
 - Replace lightweight Clarity extraction with parser-backed semantic analysis.
 - Connect `TriageClient` to live OpenAI structured outputs.
 - Add approval-gated GitHub PR creation for generated fixes.
 - Expand corpus with labeled mainnet contracts and fuzzed edge cases.
-- Add before/after remediation verification that re-scans patched contracts.
-- Expose the scanner through the `serve` API for IDE and editor integrations.
+- Add scan endpoints to the `serve` API for IDE and editor integrations.
 
 ## Sprint Checklist
 
@@ -404,6 +406,10 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add architecture diagrams.
 - [x] Add release binary workflow.
 - [x] Confirm all CI gates are green.
+- [x] Add cybersecurity validation workflow.
+- [x] Implement corpus expectation runner.
+- [x] Add before/after fix verification command.
+- [x] Add minimal HTTP health API.
 - [ ] Submit Devpost package.
 
 ## OpenAI Build Week 2026

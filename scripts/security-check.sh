@@ -38,7 +38,14 @@ echo "2. Running smart-contract security regression tests"
 cargo test -p sentinel-test-corpus security_
 echo
 
-echo "3. Checking dependency advisories when cargo-audit is available"
+echo "3. Verifying fixed contract clears targeted finding"
+cargo run --package sentinel-cli -- verify-fix \
+  --before sentinel-test-corpus/contracts/handcrafted/reentrancy/vulnerable.clar \
+  --after sentinel-test-corpus/contracts/handcrafted/reentrancy/fixed.clar \
+  --clears SC-REENTRANCY
+echo
+
+echo "4. Checking dependency advisories when cargo-audit is available"
 if command -v cargo-audit >/dev/null 2>&1; then
   cargo audit
 else

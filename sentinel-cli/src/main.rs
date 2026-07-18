@@ -5,7 +5,9 @@ use sentinel_ai::{ContextBuilder, HeuristicTriageClient, TriageEngine, TriagedFi
 use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
 use sentinel_engine::{default_registry, Scanner};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -36,6 +38,14 @@ enum Command {
     Serve {
         #[arg(long, default_value_t = 8080)]
         port: u16,
+    },
+    VerifyFix {
+        #[arg(long)]
+        before: PathBuf,
+        #[arg(long)]
+        after: PathBuf,
+        #[arg(long)]
+        clears: Vec<String>,
     },
     Init {
         #[arg(long)]
@@ -103,7 +113,15 @@ fn main() -> Result<()> {
             }
         }
         Command::Serve { port } => {
-            println!("SentinelClarity HTTP API scaffold listening target: {port}");
+            serve(port)?;
+        }
+        Command::VerifyFix {
+            before,
+            after,
+            clears,
+        } => {
+            let report = verify_fix(&before, &after, &clears)?;
+            println!("{report}");
         }
         Command::Init { validate, config } => {
             if validate {
@@ -134,7 +152,8 @@ fn main() -> Result<()> {
             );
         }
         Command::TestCorpus { all, rule } => {
-            println!("Test corpus scaffold selected: all={all}, rule={rule:?}");
+            let report = test_corpus(all, rule.as_deref())?;
+            println!("{report}");
         }
         Command::Version => {
             println!("{}", env!("CARGO_PKG_VERSION"));
@@ -172,6 +191,184 @@ fn scan_path(path: &Path) -> Result<Vec<FileScanResult>> {
     }
 
     Ok(results)
+}
+
+fn serve(port: u16) -> Result<()> {
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .with_context(|| format!("failed to bind HTTP API to 127.0.0.1:{port}"))?;
+    println!("SentinelClarity HTTP API listening on http://127.0.0.1:{port}");
+    println!("Endpoints: GET /health, GET /version");
+
+    for stream in listener.incoming() {
+        let stream = stream.context("failed to accept HTTP connection")?;
+        handle_connection(stream)?;
+    }
+
+    Ok(())
+}
+
+fn handle_connection(mut stream: TcpStream) -> Result<()> {
+    let mut buffer = [0; 1024];
+    let bytes_read = stream.read(&mut buffer)?;
+    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+    let path = request
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .unwrap_or("/");
+
+    let (status, body) = match path {
+        "/health" => (
+            "200 OK",
+            r#"{"status":"ok","service":"sentinel-clarity"}"#.to_string(),
+        ),
+        "/version" => (
+            "200 OK",
+            format!(r#"{{"version":"{}"}}"#, env!("CARGO_PKG_VERSION")),
+        ),
+        _ => (
+            "404 Not Found",
+            r#"{"error":"not found","endpoints":["/health","/version"]}"#.to_string(),
+        ),
+    };
+
+    let response = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    stream.write_all(response.as_bytes())?;
+    Ok(())
+}
+
+fn test_corpus(all: bool, rule: Option<&str>) -> Result<String> {
+    if !all && rule.is_none() {
+        return Ok("Select `--all` or `--rule <RULE_ID>` to run corpus expectations.".to_string());
+    }
+
+    let root = corpus_contract_root();
+    let scanner = Scanner::new(ClarityAdapter, default_registry());
+    let mut checked = 0usize;
+    let mut failures = Vec::new();
+
+    for (fixture, expected_rule) in handcrafted_expectations() {
+        if rule.is_some_and(|selected| selected != expected_rule) {
+            continue;
+        }
+
+        let source = std::fs::read_to_string(root.join(fixture))
+            .with_context(|| format!("failed to read corpus fixture {fixture}"))?;
+        let rule_ids = scanner
+            .scan_findings(&source)
+            .with_context(|| format!("failed to scan corpus fixture {fixture}"))?
+            .into_iter()
+            .map(|finding| finding.rule_id)
+            .collect::<BTreeSet<_>>();
+
+        checked += 1;
+        if !rule_ids.contains(expected_rule) {
+            failures.push(format!(
+                "{fixture} expected {expected_rule}, got {:?}",
+                rule_ids
+            ));
+        }
+    }
+
+    let mut output = format!("# SentinelClarity Corpus Check\n\nFixtures checked: {checked}\n");
+    if failures.is_empty() {
+        output.push_str("Result: passed\n");
+    } else {
+        output.push_str("Result: failed\n\n");
+        for failure in &failures {
+            output.push_str(&format!("- {failure}\n"));
+        }
+    }
+
+    if !failures.is_empty() {
+        println!("{output}");
+        std::process::exit(1);
+    }
+
+    Ok(output)
+}
+
+fn verify_fix(before: &Path, after: &Path, clears: &[String]) -> Result<String> {
+    let before_results = scan_path(before)?;
+    let after_results = scan_path(after)?;
+    let before_rules = collect_rule_ids(&before_results);
+    let after_rules = collect_rule_ids(&after_results);
+    let rules_to_check = if clears.is_empty() {
+        before_rules.iter().cloned().collect::<Vec<_>>()
+    } else {
+        clears.to_vec()
+    };
+
+    let mut failures = Vec::new();
+    for rule in &rules_to_check {
+        if !before_rules.contains(rule) {
+            failures.push(format!("before scan did not contain `{rule}`"));
+        }
+        if after_rules.contains(rule) {
+            failures.push(format!("after scan still contains `{rule}`"));
+        }
+    }
+
+    let mut output = format!(
+        "# SentinelClarity Fix Verification\n\nBefore: `{}`\nAfter: `{}`\nRules checked: {}\n\n",
+        before.display(),
+        after.display(),
+        rules_to_check.len()
+    );
+
+    if failures.is_empty() {
+        output.push_str("Result: passed\n");
+    } else {
+        output.push_str("Result: failed\n\n");
+        for failure in &failures {
+            output.push_str(&format!("- {failure}\n"));
+        }
+    }
+
+    if !failures.is_empty() {
+        println!("{output}");
+        std::process::exit(1);
+    }
+
+    Ok(output)
+}
+
+fn collect_rule_ids(results: &[FileScanResult]) -> BTreeSet<String> {
+    results
+        .iter()
+        .flat_map(|result| {
+            result
+                .findings
+                .iter()
+                .map(|finding| finding.rule_id.clone())
+        })
+        .collect()
+}
+
+fn handcrafted_expectations() -> [(&'static str, &'static str); 6] {
+    [
+        ("handcrafted/reentrancy/vulnerable.clar", "SC-REENTRANCY"),
+        ("handcrafted/access/vulnerable.clar", "SC-ACCESS"),
+        ("handcrafted/overflow/vulnerable.clar", "SC-OVERFLOW"),
+        ("handcrafted/unchecked/vulnerable.clar", "SC-UNCHECKED"),
+        ("handcrafted/trait/vulnerable.clar", "SC-TRAIT"),
+        ("handcrafted/readonly/vulnerable.clar", "SC-READONLY"),
+    ]
+}
+
+fn corpus_contract_root() -> PathBuf {
+    let runtime_root = PathBuf::from("sentinel-test-corpus").join("contracts");
+    if runtime_root.exists() {
+        return runtime_root;
+    }
+
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("sentinel-test-corpus")
+        .join("contracts")
 }
 
 fn clarity_files(path: &Path) -> Result<Vec<PathBuf>> {
@@ -397,5 +594,25 @@ mod tests {
         let warnings = validate_config("[rules]\n");
         assert!(warnings.iter().any(|warning| warning.contains("[ai]")));
         assert!(warnings.iter().any(|warning| warning.contains("[output]")));
+    }
+
+    #[test]
+    fn corpus_expectations_cover_all_rules() {
+        let rules = handcrafted_expectations()
+            .into_iter()
+            .map(|(_, rule)| rule)
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(
+            rules,
+            BTreeSet::from([
+                "SC-ACCESS",
+                "SC-OVERFLOW",
+                "SC-READONLY",
+                "SC-REENTRANCY",
+                "SC-TRAIT",
+                "SC-UNCHECKED",
+            ])
+        );
     }
 }

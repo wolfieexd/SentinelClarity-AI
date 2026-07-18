@@ -23,7 +23,8 @@ cd SentinelClarity-AI
 4. **Explain the output.** Point to the finding table, then explain that each finding is normalized for SARIF, markdown, JSON, and AI triage.
 5. **Show AI-native triage.** Highlight exploitability, blast radius, root cause, confidence, and fix strategy in `artifacts/demo-output.md`.
 6. **Show developer workflow.** Open `artifacts/fix-plan.md` to show the PR-ready remediation plan.
-7. **Close with the roadmap.** The current MVP is deterministic and CI-safe; the next step is live OpenAI triage and automated PRs behind the existing interfaces.
+7. **Show verification.** Run `verify-fix` on a vulnerable/fixed pair to prove selected findings clear after remediation.
+8. **Close with the roadmap.** The current MVP is deterministic and CI-safe; the next step is live OpenAI triage and automated PRs behind the existing interfaces.
 
 ## Suggested Closing Line
 

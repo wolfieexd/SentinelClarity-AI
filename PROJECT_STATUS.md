@@ -8,6 +8,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | --- | --- | --- |
 | Rust workspace | Working | Multi-crate workspace with CI across Ubuntu, macOS, and Windows. |
 | Clarity scanning | Working | Recursively scans `.clar` files from a file or directory path. |
+| Fix verification | Working | Compares before/after contracts and asserts selected findings are cleared. |
 | Security rules | Working | Six heuristic rule categories are implemented and documented. |
 | Output formats | Working | SARIF, JSON, and markdown output are supported. |
 | AI-style triage | Working offline | Deterministic triage produces exploitability, blast radius, root cause, confidence, and fix strategy. |
@@ -26,7 +27,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI integration | Offline `TriageClient` implementation | Live OpenAI-backed triage with structured responses and policy controls. |
 | PR automation | Fix-package templates and mock PR plan | Real GitHub PR creation with patch application and re-scan verification. |
 | Corpus | Handcrafted, demo, and regression fixtures | Mainnet-scale labeled corpus and fuzzed edge cases. |
-| HTTP server | CLI command surface exists | Production API for IDE/editor integrations. |
+| HTTP server | Minimal `/health` and `/version` endpoints | Production scan API for IDE/editor integrations. |
 
 ## Judge-Ready Claim
 
@@ -34,4 +35,4 @@ SentinelClarity is fully functional as a polished Build Week MVP: it can be clon
 
 ## Recommended Next Milestone
 
-Sprint 4 should connect the existing `TriageClient` abstraction to a live OpenAI structured-output workflow, then add GitHub PR automation that applies the generated fix plan, runs the scanner again, and posts a before/after summary.
+The next production milestone should connect the existing `TriageClient` abstraction to a live OpenAI structured-output workflow, then add GitHub PR automation that applies the generated fix plan, runs the scanner again, and posts a before/after summary.

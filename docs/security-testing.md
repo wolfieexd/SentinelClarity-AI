@@ -10,6 +10,7 @@ The `Security` workflow runs on every push to `main` and every pull request.
 | --- | --- |
 | Secret pattern scan | Fails if tracked files contain high-risk patterns such as private keys, GitHub tokens, OpenAI keys, AWS access keys, or password-like fields. |
 | Smart-contract security regressions | Runs targeted Clarity corpus tests that verify vulnerable fixtures emit expected findings and fixed fixtures clear targeted risks. |
+| Fix verification | The CLI can compare before/after contracts and fail if selected risks remain. |
 
 ## Local Command
 
