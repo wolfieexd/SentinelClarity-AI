@@ -1,0 +1,11 @@
+{
+  "contract": "demo/vulnerable-dao.clar",
+  "expected_findings": [
+    "SC-ACCESS",
+    "SC-OVERFLOW",
+    "SC-REENTRANCY",
+    "SC-UNCHECKED",
+    "SC-READONLY"
+  ],
+  "demo_story": "A DAO treasury contract with missing owner checks, unchecked math, external calls before accounting updates, unhandled bridge responses, and read-only mutation."
+}

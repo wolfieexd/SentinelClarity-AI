@@ -98,6 +98,20 @@ cargo run --package sentinel-cli -- completions powershell
 cargo run --package sentinel-cli -- test-corpus --all
 ```
 
+## Judge Quickstart
+
+Run the full demo flow in under two minutes:
+
+```bash
+git clone https://github.com/wolfieexd/SentinelClarity-AI.git
+cd SentinelClarity-AI
+cargo test --workspace
+cargo run --package sentinel-cli -- init --validate --config sentinel.toml
+cargo run --package sentinel-cli -- scan sentinel-test-corpus/contracts/demo/vulnerable-dao.clar --format markdown --triage --fail-on critical
+```
+
+The demo target is `sentinel-test-corpus/contracts/demo/vulnerable-dao.clar`, a deliberately vulnerable DAO treasury contract with access-control, arithmetic, unchecked-call, reentrancy, and read-only mutation findings.
+
 Planned production commands:
 
 | Command | Purpose |
@@ -205,6 +219,31 @@ The repository includes a repeatable demo script for the current offline scanner
 
 The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style markdown triage, and writes a SARIF report to `sentinel-results.sarif`.
 
+### Demo Flow
+
+1. Open `sentinel-test-corpus/contracts/demo/vulnerable-dao.clar`.
+2. Run `sentinel-clarity scan` with `--triage`.
+3. Review exploitability, blast radius, root cause, and fix strategy.
+4. Compare against `sentinel-test-corpus/contracts/demo/fixed-dao.clar`.
+5. Inspect `artifacts/fix-plan.md` as the mock PR body.
+6. Upload or inspect `artifacts/sentinel-results.sarif` for GitHub code-scanning style output.
+
+### Demo Artifacts
+
+| Artifact | Purpose |
+| --- | --- |
+| `artifacts/demo-output.md` | Sample AI triage report for the vulnerable DAO |
+| `artifacts/fix-plan.md` | Mock remediation PR body |
+| `artifacts/sentinel-results.sarif` | Sample SARIF 2.1.0 output with source locations |
+
+## What Makes This AI-Native
+
+- Findings are normalized into a structured schema before triage.
+- Each finding receives exploitability, blast radius, root cause, and fix strategy.
+- Fix packages are generated as reviewable patch and test plans rather than silent rewrites.
+- The `TriageClient` trait keeps offline CI deterministic while preserving a clean integration point for live OpenAI-backed triage.
+- The architecture separates static analysis, reasoning, remediation planning, and delivery automation.
+
 ## Build Week Plan
 
 | Sprint | Focus | Gate |
@@ -250,10 +289,12 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 ### Sprint 3 - Polish and Submission
 
 - [x] Improve error UX and configuration validation.
+- [x] Add demo DAO vulnerable and fixed contract pair.
+- [x] Add sample demo report, SARIF, and mock PR fix plan artifacts.
 - [ ] Expand corpus coverage beyond handcrafted fixtures.
 - [x] Add shell completion generation.
 - [x] Prepare demo script and recording assets.
-- [ ] Finalize README submission metadata.
+- [x] Finalize README judge quickstart and demo flow.
 - [ ] Confirm all CI gates are green.
 - [ ] Submit Devpost package.
 

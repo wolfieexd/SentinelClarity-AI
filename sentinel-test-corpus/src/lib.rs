@@ -40,6 +40,34 @@ mod tests {
         }
     }
 
+    #[test]
+    fn demo_dao_emits_story_findings() {
+        let scanner = Scanner::new(ClarityAdapter, default_registry());
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join(super::CORPUS_ROOT)
+            .join("demo")
+            .join("vulnerable-dao.clar");
+        let source = fs::read_to_string(path).expect("demo fixture is readable");
+        let findings = scanner.scan_findings(&source).expect("demo parses");
+        let rule_ids = findings
+            .into_iter()
+            .map(|finding| finding.rule_id)
+            .collect::<BTreeSet<_>>();
+
+        for expected in [
+            "SC-ACCESS",
+            "SC-OVERFLOW",
+            "SC-REENTRANCY",
+            "SC-UNCHECKED",
+            "SC-READONLY",
+        ] {
+            assert!(
+                rule_ids.contains(expected),
+                "missing finding for {expected}"
+            );
+        }
+    }
+
     fn vulnerable_contracts() -> Vec<PathBuf> {
         let corpus_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join(super::CORPUS_ROOT)

@@ -157,9 +157,16 @@ fn scan_path(path: &Path) -> Result<Vec<FileScanResult>> {
     for file in clarity_files(path)? {
         let source = std::fs::read_to_string(&file)
             .with_context(|| format!("failed to read {}", file.display()))?;
-        let findings = scanner
+        let mut findings = scanner
             .scan_findings(&source)
             .with_context(|| format!("failed to parse {}", file.display()))?;
+        let display_path = file.to_string_lossy().replace('\\', "/");
+
+        for finding in &mut findings {
+            finding
+                .metadata
+                .insert("source_path".to_string(), display_path.clone());
+        }
 
         results.push(FileScanResult { source, findings });
     }

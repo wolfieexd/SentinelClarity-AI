@@ -1,0 +1,214 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "SentinelClarity",
+          "rules": [
+            {
+              "id": "SC-ACCESS",
+              "name": "SC-ACCESS",
+              "shortDescription": {
+                "text": "Missing access control"
+              },
+              "fullDescription": {
+                "text": "Detects admin-like public functions that mutate state without an obvious authorization guard."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "SC-OVERFLOW",
+              "name": "SC-OVERFLOW",
+              "shortDescription": {
+                "text": "Unchecked arithmetic"
+              },
+              "fullDescription": {
+                "text": "Detects arithmetic that should be reviewed for checked overflow behavior."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "SC-REENTRANCY",
+              "name": "SC-REENTRANCY",
+              "shortDescription": {
+                "text": "External call before state update"
+              },
+              "fullDescription": {
+                "text": "Detects external calls that occur before state-changing operations in the same function."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "SC-UNCHECKED",
+              "name": "SC-UNCHECKED",
+              "shortDescription": {
+                "text": "Unchecked external call"
+              },
+              "fullDescription": {
+                "text": "Detects external contract calls without explicit response handling."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "SC-READONLY",
+              "name": "SC-READONLY",
+              "shortDescription": {
+                "text": "Read-only state mutation"
+              },
+              "fullDescription": {
+                "text": "Detects state-changing operations inside read-only functions."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "artifacts": [
+        {
+          "location": {
+            "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "SC-ACCESS",
+          "level": "error",
+          "message": {
+            "text": "Admin-like public function `set-owner` mutates state without an owner or caller authorization check."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 1,
+                  "endLine": 10,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "properties": {
+            "source_path": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        },
+        {
+          "ruleId": "SC-OVERFLOW",
+          "level": "error",
+          "message": {
+            "text": "Function `mint-governance` uses arithmetic that should be reviewed for checked overflow behavior."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 1,
+                  "endLine": 16,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "properties": {
+            "source_path": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        },
+        {
+          "ruleId": "SC-REENTRANCY",
+          "level": "error",
+          "message": {
+            "text": "Function `withdraw-treasury` performs an external call before a state-changing operation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+                },
+                "region": {
+                  "startLine": 18,
+                  "startColumn": 1,
+                  "endLine": 22,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "properties": {
+            "source_path": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        },
+        {
+          "ruleId": "SC-UNCHECKED",
+          "level": "warning",
+          "message": {
+            "text": "Function `notify-bridge` makes an external contract call without an explicit response handling path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 1,
+                  "endLine": 27,
+                  "endColumn": 14
+                }
+              }
+            }
+          ],
+          "properties": {
+            "source_path": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        },
+        {
+          "ruleId": "SC-READONLY",
+          "level": "error",
+          "message": {
+            "text": "Read-only function `get-votes` contains a state-changing operation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+                },
+                "region": {
+                  "startLine": 29,
+                  "startColumn": 1,
+                  "endLine": 33,
+                  "endColumn": 42
+                }
+              }
+            }
+          ],
+          "properties": {
+            "source_path": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar"
+          }
+        }
+      ]
+    }
+  ]
+}
