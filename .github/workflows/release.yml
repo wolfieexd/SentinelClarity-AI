@@ -7,7 +7,9 @@ on:
       - "v*"
 
 permissions:
+  attestations: write
   contents: read
+  id-token: write
 
 jobs:
   build:
@@ -46,3 +48,7 @@ jobs:
             ${{ matrix.binary }}
             checksums/${{ matrix.artifact }}.sha256
           retention-days: 30
+      - name: Attest release binary
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ matrix.binary }}

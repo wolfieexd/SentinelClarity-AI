@@ -32,6 +32,7 @@ mod tests {
             "SC-UNCHECKED",
             "SC-TRAIT",
             "SC-READONLY",
+            "SC-TX-SENDER",
         ] {
             assert!(
                 rule_ids.contains(expected),
@@ -102,6 +103,7 @@ mod tests {
             ("handcrafted/unchecked/fixed.clar", "SC-UNCHECKED"),
             ("handcrafted/readonly/fixed.clar", "SC-READONLY"),
             ("handcrafted/trait/fixed.clar", "SC-TRAIT"),
+            ("handcrafted/tx-sender/fixed.clar", "SC-TX-SENDER"),
         ] {
             let rule_ids = scan_rule_ids(&scanner, fixture);
             assert!(

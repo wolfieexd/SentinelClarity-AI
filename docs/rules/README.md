@@ -10,3 +10,4 @@ SentinelClarity rules emit normalized findings with stable `SC-*` identifiers, s
 | `SC-UNCHECKED` | Medium | `SC-UNCHECKED.md` |
 | `SC-TRAIT` | Medium | `SC-TRAIT.md` |
 | `SC-READONLY` | High | `SC-READONLY.md` |
+| `SC-TX-SENDER` | High | `SC-TX-SENDER.md` |

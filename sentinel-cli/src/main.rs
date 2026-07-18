@@ -51,6 +51,12 @@ enum Command {
             help = "Validate each contract with the installed Clarinet toolchain"
         )]
         clarinet: bool,
+        #[arg(
+            long,
+            requires = "clarinet",
+            help = "Clarinet.toml manifest for compiler-backed project validation"
+        )]
+        clarinet_manifest: Option<PathBuf>,
     },
     Serve {
         #[arg(long, default_value_t = 8080)]
@@ -161,11 +167,15 @@ fn main() -> Result<()> {
             fail_on,
             triage,
             clarinet,
+            clarinet_manifest,
         } => {
             let policy = load_scan_policy(config.as_deref())?;
             let fail_on = fail_on
                 .map(FailSeverity::as_severity)
                 .unwrap_or(policy.fail_on);
+            if let Some(manifest) = clarinet_manifest.as_deref() {
+                clarinet_manifest_check(manifest)?;
+            }
             let scan_results = scan_path(&path, &policy, clarinet)?;
             let findings = scan_results
                 .iter()
@@ -288,13 +298,14 @@ struct AuditedContract {
     findings: usize,
 }
 
-const KNOWN_RULE_IDS: [&str; 6] = [
+const KNOWN_RULE_IDS: [&str; 7] = [
     "SC-REENTRANCY",
     "SC-ACCESS",
     "SC-OVERFLOW",
     "SC-UNCHECKED",
     "SC-TRAIT",
     "SC-READONLY",
+    "SC-TX-SENDER",
 ];
 
 fn load_scan_policy(config_path: Option<&Path>) -> Result<ScanPolicy> {
@@ -421,6 +432,35 @@ fn clarinet_check(file: &Path) -> Result<()> {
         diagnostics.chars().take(4_096).collect()
     };
     anyhow::bail!("Clarinet rejected {}: {detail}", file.display());
+}
+
+fn clarinet_manifest_check(manifest: &Path) -> Result<()> {
+    let output = ProcessCommand::new("clarinet")
+        .arg("check")
+        .arg("--manifest-path")
+        .arg(manifest)
+        .output()
+        .context("failed to launch Clarinet; install it or omit `--clarinet`")?;
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let diagnostics = if stderr.trim().is_empty() {
+        stdout.trim()
+    } else {
+        stderr.trim()
+    };
+    let detail = if diagnostics.is_empty() {
+        "Clarinet returned a non-zero status without diagnostics".to_string()
+    } else {
+        diagnostics.chars().take(4_096).collect()
+    };
+    anyhow::bail!(
+        "Clarinet manifest validation failed for {}: {detail}",
+        manifest.display()
+    );
 }
 
 fn write_audit_evidence(
@@ -835,7 +875,7 @@ fn collect_rule_ids(results: &[FileScanResult]) -> BTreeSet<String> {
         .collect()
 }
 
-fn handcrafted_expectations() -> [(&'static str, &'static str); 6] {
+fn handcrafted_expectations() -> [(&'static str, &'static str); 7] {
     [
         ("handcrafted/reentrancy/vulnerable.clar", "SC-REENTRANCY"),
         ("handcrafted/access/vulnerable.clar", "SC-ACCESS"),
@@ -843,6 +883,7 @@ fn handcrafted_expectations() -> [(&'static str, &'static str); 6] {
         ("handcrafted/unchecked/vulnerable.clar", "SC-UNCHECKED"),
         ("handcrafted/trait/vulnerable.clar", "SC-TRAIT"),
         ("handcrafted/readonly/vulnerable.clar", "SC-READONLY"),
+        ("handcrafted/tx-sender/vulnerable.clar", "SC-TX-SENDER"),
     ]
 }
 
@@ -1008,6 +1049,10 @@ fn default_rule_docs() -> BTreeMap<String, String> {
         (
             "SC-READONLY",
             include_str!("../../docs/rules/SC-READONLY.md"),
+        ),
+        (
+            "SC-TX-SENDER",
+            include_str!("../../docs/rules/SC-TX-SENDER.md"),
         ),
     ]
     .into_iter()
@@ -1223,6 +1268,7 @@ mod tests {
                 "SC-ACCESS",
                 "SC-OVERFLOW",
                 "SC-READONLY",
+                "SC-TX-SENDER",
                 "SC-REENTRANCY",
                 "SC-TRAIT",
                 "SC-UNCHECKED",

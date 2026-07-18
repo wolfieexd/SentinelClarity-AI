@@ -220,6 +220,10 @@ fn rule_details(rule_id: &str) -> (&'static str, &'static str) {
             "Read-only state mutation",
             "Detects state-changing operations inside read-only functions.",
         ),
+        "SC-TX-SENDER" => (
+            "tx-sender authorization risk",
+            "Detects state-changing public functions that authorize with tx-sender without constraining contract-caller.",
+        ),
         _ => (
             "SentinelClarity finding",
             "Security finding emitted by SentinelClarity.",

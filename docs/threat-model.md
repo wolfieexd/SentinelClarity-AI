@@ -30,6 +30,7 @@ SentinelClarity focuses on security risks that appear repeatedly in Clarity smar
 | `SC-UNCHECKED` | Unhandled `contract-call?` responses | Failed external calls can be ignored, leaving inconsistent state. |
 | `SC-TRAIT` | Trait implementation mismatch patterns | Integrations can rely on incomplete or misleading interfaces. |
 | `SC-READONLY` | State mutation in read-only flows | Query paths can violate expected read-only behavior. |
+| `SC-TX-SENDER` | Authorization trusts `tx-sender` alone | A malicious intermediary can induce a signer to reach a privileged state-changing path. |
 
 ## Out of Scope for MVP
 

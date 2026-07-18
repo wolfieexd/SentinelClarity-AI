@@ -5,6 +5,7 @@ SC-OVERFLOW = { enabled = true, severity = "high" }
 SC-UNCHECKED = { enabled = true, severity = "medium" }
 SC-TRAIT = { enabled = true, severity = "medium" }
 SC-READONLY = { enabled = true, severity = "high" }
+SC-TX-SENDER = { enabled = true, severity = "high" }
 
 [ai]
 model = "gpt-5.6"

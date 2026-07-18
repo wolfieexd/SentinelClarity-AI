@@ -5,12 +5,12 @@ SentinelClarity can become a strong, independent audit **assistant**. It must no
 ## What Is Implemented
 
 - Bounded, fail-closed static scanning with deterministic output.
-- Six documented Clarity risk rules and vulnerable/fixed regression fixtures.
+- Seven documented Clarity risk rules and vulnerable/fixed regression fixtures.
 - Rule policy enforcement from `sentinel.toml`.
 - Structural source validation that ignores comments and strings during rule matching.
 - Optional official-toolchain validation through `sentinel-clarity scan --clarinet`.
 - SHA-256 audit evidence bundles covering the source, policy, compiler version, findings, and gate result.
-- SHA-256 checksums attached to every release artifact.
+- CycloneDX SBOMs, SHA-256 checksums, and keyless GitHub build attestations for release artifacts.
 - SARIF, JSON, markdown, fix verification, dependency advisory checks, secret scanning, and CodeQL.
 
 ## Audit-Grade Milestones

@@ -1,0 +1,27 @@
+name: SBOM
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate CycloneDX SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Generate SBOM
+        shell: pwsh
+        run: ./scripts/generate-sbom.ps1
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-clarity-sbom
+          path: artifacts/sentinel-sbom.cdx.json
+          retention-days: 30

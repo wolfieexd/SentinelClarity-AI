@@ -9,6 +9,7 @@ pub struct OverflowRule;
 pub struct UncheckedCallRule;
 pub struct TraitRule;
 pub struct ReadOnlyRule;
+pub struct TxSenderRule;
 
 impl SecurityRule for ReentrancyRule {
     fn id(&self) -> String {
@@ -60,10 +61,10 @@ impl SecurityRule for AccessControlRule {
             .filter(|function| contains_state_write(&body_text(function)))
             .filter(|function| {
                 let body = body_text(function);
-                !(body.contains("tx-sender")
-                    && (body.contains("contract-owner")
-                        || body.contains("owner")
-                        || body.contains("contract-caller")))
+                let owner_reference = body.contains("contract-owner") || body.contains("owner");
+                let sender_guard = body.contains("tx-sender") && owner_reference;
+                let caller_guard = body.contains("contract-caller") && owner_reference;
+                !(sender_guard || caller_guard)
             })
             .map(|function| {
                 finding(
@@ -207,6 +208,41 @@ impl SecurityRule for ReadOnlyRule {
     }
 }
 
+impl SecurityRule for TxSenderRule {
+    fn id(&self) -> String {
+        "SC-TX-SENDER".to_string()
+    }
+
+    fn severity(&self) -> Severity {
+        Severity::High
+    }
+
+    fn visit(&self, ast: &UniversalAST) -> Vec<Finding> {
+        ast.functions()
+            .into_iter()
+            .filter(|function| matches!(function.visibility, Visibility::Public))
+            .filter(|function| contains_state_write(&body_text(function)))
+            .filter(|function| {
+                let body = body_text(function);
+                body.contains("tx-sender")
+                    && body.contains("is-eq")
+                    && !body.contains("contract-caller")
+            })
+            .map(|function| {
+                finding(
+                    self.id(),
+                    self.severity(),
+                    function.span,
+                    format!(
+                        "Function `{}` authorizes a state-changing public call with tx-sender but does not constrain contract-caller.",
+                        function.name
+                    ),
+                )
+            })
+            .collect()
+    }
+}
+
 fn body_text(function: &Function) -> String {
     function
         .body
@@ -282,5 +318,15 @@ mod tests {
         assert!(results
             .iter()
             .any(|finding| finding.rule_id == "SC-UNCHECKED"));
+    }
+
+    #[test]
+    fn detects_tx_sender_authorization_without_caller_constraint() {
+        let results = findings(
+            "(define-public (withdraw) (begin (asserts! (is-eq tx-sender (var-get owner)) (err u401)) (var-set paused true) (ok true)))",
+        );
+        assert!(results
+            .iter()
+            .any(|finding| finding.rule_id == "SC-TX-SENDER"));
     }
 }

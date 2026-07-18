@@ -62,6 +62,7 @@ pub fn default_registry() -> RuleRegistry {
     registry.register(rules::UncheckedCallRule);
     registry.register(rules::TraitRule);
     registry.register(rules::ReadOnlyRule);
+    registry.register(rules::TxSenderRule);
     registry
 }
 

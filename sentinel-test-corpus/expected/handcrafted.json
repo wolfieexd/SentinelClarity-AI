@@ -5,6 +5,7 @@
     { "path": "handcrafted/overflow/vulnerable.clar", "rule_id": "SC-OVERFLOW", "count": 1, "severity": "high" },
     { "path": "handcrafted/unchecked/vulnerable.clar", "rule_id": "SC-UNCHECKED", "count": 1, "severity": "medium" },
     { "path": "handcrafted/trait/vulnerable.clar", "rule_id": "SC-TRAIT", "count": 1, "severity": "medium" },
-    { "path": "handcrafted/readonly/vulnerable.clar", "rule_id": "SC-READONLY", "count": 1, "severity": "high" }
+    { "path": "handcrafted/readonly/vulnerable.clar", "rule_id": "SC-READONLY", "count": 1, "severity": "high" },
+    { "path": "handcrafted/tx-sender/vulnerable.clar", "rule_id": "SC-TX-SENDER", "count": 1, "severity": "high" }
   ]
 }

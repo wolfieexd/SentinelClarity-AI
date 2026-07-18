@@ -53,6 +53,7 @@ The corpus validates these vulnerability classes:
 - `SC-UNCHECKED` unhandled external call responses
 - `SC-TRAIT` trait implementation mismatch patterns
 - `SC-READONLY` state mutation from read-only functions
+- `SC-TX-SENDER` `tx-sender` authorization without a `contract-caller` constraint
 
 Additional regression tests verify that fixed handcrafted fixtures clear targeted access-control, reentrancy, unchecked-call, trait, and read-only findings. The fixed DAO demo intentionally retains conservative access-control and arithmetic review signals because the MVP rule engine does not yet follow delegated private authorization helpers or prove arithmetic guards.
 

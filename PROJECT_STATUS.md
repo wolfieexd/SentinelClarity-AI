@@ -10,7 +10,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | Clarity scanning | Working | Deterministically scans bounded `.clar` paths and fails closed on traversal or size errors. |
 | Scan policy | Working | `--config` validates and applies per-rule enablement and severity overrides. |
 | Fix verification | Working | Compares before/after contracts and asserts selected findings are cleared. |
-| Security rules | Working | Six heuristic rule categories are implemented and documented. |
+| Security rules | Working | Seven focused Clarity rule categories are implemented and documented. |
 | Output formats | Working | SARIF, JSON, and markdown output are supported. |
 | AI-style triage | Working offline | Deterministic triage produces exploitability, blast radius, root cause, confidence, and fix strategy. |
 | Fix planning | Working offline | Generates reviewable fix-package text for supported findings. |
@@ -18,6 +18,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | Security checks | Working | Secret scanning, dependency advisory auditing, CodeQL, and smart-contract security regressions run in CI. |
 | Clarinet validation | Working locally | `scan --clarinet` requires installed Clarinet syntax validation before analysis. |
 | Audit evidence | Working | `scan --evidence` emits a SHA-256 provenance bundle for review and retention. |
+| Supply-chain evidence | Working | CI publishes a CycloneDX SBOM; tagged release binaries include SHA-256 checksums and GitHub build attestations. |
 | CI | Working | Format, Clippy, tests, release build, and artifacts run in GitHub Actions. |
 | Release workflow | Ready | Tag/manual workflow builds platform binaries. |
 

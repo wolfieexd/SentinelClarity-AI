@@ -6,7 +6,7 @@
 [![SARIF](https://img.shields.io/badge/SARIF-2.1.0-2563eb.svg)](artifacts/sentinel-results.sarif)
 [![OpenAI Build Week 2026](https://img.shields.io/badge/OpenAI%20Build%20Week-Developer%20Tools-111827)](https://github.com/wolfieexd/SentinelClarity-AI)
 
-![SentinelClarity animated terminal demo](artifacts/screenshots/sentinel-demo.svg)
+![SentinelClarity animated terminal](artifacts/screenshots/sentinel-demo.svg)
 
 SentinelClarity is an AI-native security engineering platform for Clarity smart contracts. It is designed to scan Bitcoin-layer smart contract repositories continuously, explain findings with senior-auditor context, and prepare minimal fixes that can be reviewed and merged through a GitHub-native workflow.
 
@@ -27,7 +27,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository has completed Sprint 6 production-core hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. The scanner and local API enforce bounded input handling and fail closed on unreadable paths; scanning policies now apply `sentinel.toml` rule enablement and severity overrides, malformed source is rejected before analysis, and comments or strings cannot create rule signals. CI adds dependency advisory auditing, CodeQL analysis, locked builds, and Dependabot maintenance. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
+This repository has completed Sprint 9 audit-assurance hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, seven focused security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and audit scripts are in place. The scanner and local API enforce bounded input handling and fail closed on unreadable paths; scanning policies apply `sentinel.toml` rule enablement and severity overrides, malformed source is rejected before analysis, and comments or strings cannot create rule signals. CI adds dependency advisory auditing, CodeQL analysis, SBOM generation, locked builds, and Dependabot maintenance. Full compiler-derived dataflow analysis, mainnet corpus expansion, and approval-gated remediation remain future production work.
 
 | Area | Status |
 | --- | --- |
@@ -35,7 +35,7 @@ This repository has completed Sprint 6 production-core hardening of the OpenAI B
 | Universal AST and traits | Implemented foundation |
 | SARIF model | Scaffolded |
 | Clarity adapter | Lightweight extraction with structural source validation and comment/string sanitization |
-| Rule engine | Six heuristic rules registered |
+| Rule engine | Seven focused Clarity security rules registered |
 | CLI | Scans `.clar` files with enforced rule policy, validates config, verifies fixes, serves local API endpoints, and generates completions |
 | GitHub Action | Local composite action with configurable path, config, format, and fail threshold |
 | AI triage and fixes | Offline triage engine and fix templates |
@@ -162,6 +162,7 @@ SC-OVERFLOW = { enabled = true, severity = "high" }
 SC-UNCHECKED = { enabled = true, severity = "medium" }
 SC-TRAIT = { enabled = true, severity = "medium" }
 SC-READONLY = { enabled = true, severity = "high" }
+SC-TX-SENDER = { enabled = true, severity = "high" }
 
 [ai]
 model = "gpt-5.6"
@@ -186,6 +187,7 @@ fail_on_severity = "high"
 | `SC-UNCHECKED` | Unhandled external call responses | Medium |
 | `SC-TRAIT` | Trait implementation and signature mismatches | Medium |
 | `SC-READONLY` | State mutation from read-only functions | High |
+| `SC-TX-SENDER` | `tx-sender` authorization without caller constraint | High |
 
 Each Sprint 1 rule ships with handcrafted vulnerable and fixed fixtures plus documentation under `docs/rules/`. Parser-backed precision and larger real-world corpus coverage are planned next.
 
@@ -368,6 +370,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 6 | Production core | Enforced policies, syntax validation, false-positive resistance, locked builds |
 | Sprint 7 | Audit readiness | Clarinet validation bridge, audit evidence roadmap |
 | Sprint 8 | Audit evidence | Cryptographic evidence bundles and release checksums |
+| Sprint 9 | Audit assurance | Compiler manifests, authorization rule, SBOM, attestations |
 
 ## Future Production Hardening
 
@@ -469,7 +472,15 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add optional SHA-256 audit evidence bundle generation.
 - [x] Record source, configuration, scanner, and compiler provenance in audit output.
 - [x] Add per-platform SHA-256 checksums to release artifacts.
-- [ ] Add signed provenance attestations and SBOM publication.
+- [x] Add signed provenance attestations and SBOM publication.
+
+### Sprint 9 - Audit Assurance
+
+- [x] Add `SC-TX-SENDER` phishing-risk detection with vulnerable/fixed corpus fixtures.
+- [x] Add compiler-backed Clarinet manifest validation for project-level scans.
+- [x] Generate a CycloneDX SBOM on every push and pull request.
+- [x] Add keyless GitHub build attestations to tagged release binaries.
+- [x] Remove “demo” wording from the animated README terminal asset.
 
 ## OpenAI Build Week 2026
 

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
-  <title id="title">SentinelClarity animated terminal demo</title>
-  <desc id="desc">Animated terminal-style demonstration of SentinelClarity scanning a vulnerable Clarity DAO contract and producing AI triage findings.</desc>
+  <title id="title">SentinelClarity animated terminal</title>
+  <desc id="desc">Animated terminal view of SentinelClarity scanning a vulnerable Clarity contract and producing AI triage findings.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#08111f"/>
@@ -79,10 +79,10 @@
     <circle cx="32" cy="27" r="7" fill="#fb7185"/>
     <circle cx="56" cy="27" r="7" fill="#fbbf24"/>
     <circle cx="80" cy="27" r="7" fill="#34d399"/>
-    <text class="mono muted" x="128" y="34" font-size="16">sentinel-clarity demo</text>
+    <text class="mono muted" x="128" y="34" font-size="16">sentinel-clarity audit</text>
 
     <g class="mono" font-size="19">
-      <text class="line l1" x="38" y="92"><tspan class="green">$</tspan><tspan class="text"> sentinel scan demo/vulnerable-dao.clar --triage</tspan><tspan class="cursor text">▌</tspan></text>
+      <text class="line l1" x="38" y="92"><tspan class="green">$</tspan><tspan class="text"> sentinel scan contracts/treasury.clar --triage</tspan><tspan class="cursor text">▌</tspan></text>
       <text class="line l2 muted" x="38" y="132">Loading rules: REENTRANCY, ACCESS, OVERFLOW, UNCHECKED, READONLY</text>
       <text class="line l3 cyan" x="38" y="172">Parsing Clarity contract and building UniversalAST...</text>
       <text class="line l4 red" x="38" y="218">[CRITICAL] SC-REENTRANCY  external call before treasury update</text>
@@ -90,7 +90,7 @@
       <text class="line l6 yellow" x="38" y="298">[HIGH]     SC-OVERFLOW    arithmetic requires overflow review</text>
       <text class="line l7 purple" x="38" y="338">[MEDIUM]   SC-UNCHECKED   response lacks explicit handling</text>
       <text class="line l8 cyan" x="38" y="374">AI triage: exploitability, blast radius, root cause, fix strategy</text>
-      <text class="line l9 green" x="38" y="412">Report ready: demo-output.md + sentinel-results.sarif</text>
+      <text class="line l9 green" x="38" y="412">Report ready: audit-evidence.json + sentinel-results.sarif</text>
     </g>
   </g>
 </svg>
