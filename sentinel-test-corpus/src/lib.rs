@@ -92,6 +92,69 @@ mod tests {
         }
     }
 
+    #[test]
+    fn security_fixed_contracts_clear_targeted_findings() {
+        let scanner = Scanner::new(ClarityAdapter, default_registry());
+
+        for (fixture, cleared_rule) in [
+            ("handcrafted/access/fixed.clar", "SC-ACCESS"),
+            ("handcrafted/reentrancy/fixed.clar", "SC-REENTRANCY"),
+            ("handcrafted/unchecked/fixed.clar", "SC-UNCHECKED"),
+            ("handcrafted/readonly/fixed.clar", "SC-READONLY"),
+            ("handcrafted/trait/fixed.clar", "SC-TRAIT"),
+        ] {
+            let rule_ids = scan_rule_ids(&scanner, fixture);
+            assert!(
+                !rule_ids.contains(cleared_rule),
+                "{fixture} should clear {cleared_rule}, got {rule_ids:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn security_fixed_demo_reduces_critical_and_control_flow_risks() {
+        let scanner = Scanner::new(ClarityAdapter, default_registry());
+        let vulnerable = scan_rule_ids(&scanner, "demo/vulnerable-dao.clar");
+        let fixed = scan_rule_ids(&scanner, "demo/fixed-dao.clar");
+
+        for expected_vulnerable_rule in
+            ["SC-ACCESS", "SC-REENTRANCY", "SC-UNCHECKED", "SC-READONLY"]
+        {
+            assert!(
+                vulnerable.contains(expected_vulnerable_rule),
+                "vulnerable demo should emit {expected_vulnerable_rule}"
+            );
+            assert!(
+                !fixed.contains(expected_vulnerable_rule),
+                "fixed demo should clear {expected_vulnerable_rule}, got {fixed:?}"
+            );
+        }
+
+        assert!(
+            fixed.contains("SC-OVERFLOW"),
+            "fixed demo should retain conservative arithmetic review signal"
+        );
+    }
+
+    #[test]
+    fn security_expected_metadata_covers_demo_and_regression_corpus() {
+        for expected_file in [
+            "demo-dao.json",
+            "marketplace-escrow.json",
+            "handcrafted.json",
+        ] {
+            let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("expected")
+                .join(expected_file);
+            let content = fs::read_to_string(path).expect("expected metadata is readable");
+
+            assert!(
+                content.contains("expected_findings") || content.contains("\"contracts\""),
+                "{expected_file} should describe expected security findings"
+            );
+        }
+    }
+
     fn vulnerable_contracts() -> Vec<PathBuf> {
         let corpus_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join(super::CORPUS_ROOT)
@@ -105,6 +168,19 @@ mod tests {
             .filter(|path| {
                 path.file_name().and_then(|name| name.to_str()) == Some("vulnerable.clar")
             })
+            .collect()
+    }
+
+    fn scan_rule_ids(scanner: &Scanner<ClarityAdapter>, fixture: &str) -> BTreeSet<String> {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join(super::CORPUS_ROOT)
+            .join(fixture);
+        let source = fs::read_to_string(path).expect("fixture is readable");
+        scanner
+            .scan_findings(&source)
+            .expect("fixture parses")
+            .into_iter()
+            .map(|finding| finding.rule_id)
             .collect()
     }
 }

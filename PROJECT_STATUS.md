@@ -13,6 +13,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI-style triage | Working offline | Deterministic triage produces exploitability, blast radius, root cause, confidence, and fix strategy. |
 | Fix planning | Working offline | Generates reviewable fix-package text for supported findings. |
 | Demo flow | Working | `scripts/judge-demo.sh` validates config, scans the demo DAO, and writes artifacts. |
+| Security checks | Working | Dedicated workflow runs secret scanning and smart-contract security regressions. |
 | CI | Working | Format, Clippy, tests, release build, and artifacts run in GitHub Actions. |
 | Release workflow | Ready | Tag/manual workflow builds platform binaries. |
 

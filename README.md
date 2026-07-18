@@ -40,6 +40,7 @@ This repository is in Sprint 3 of the OpenAI Build Week implementation plan. The
 | GitHub Action | Template scaffolded |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
+| Security validation | Secret scan plus smart-contract security regression workflow |
 
 For a precise capability matrix, see `PROJECT_STATUS.md`.
 
@@ -103,6 +104,7 @@ cargo run --package sentinel-cli -- init
 cargo run --package sentinel-cli -- init --validate --config sentinel.toml
 cargo run --package sentinel-cli -- completions powershell
 cargo run --package sentinel-cli -- test-corpus --all
+./scripts/security-check.sh
 ```
 
 ## Judge Quickstart
@@ -256,6 +258,15 @@ SentinelClarity is a polished hackathon MVP, not a complete audit replacement.
 - The corpus includes handcrafted, demo, and regression fixtures, but not a large labeled mainnet dataset.
 - Findings should be reviewed by developers or auditors before production decisions.
 
+## Security Testing
+
+SentinelClarity includes a dedicated security validation layer:
+
+- `scripts/security-check.sh` scans tracked files for high-risk secret patterns.
+- `.github/workflows/security.yml` runs secret scanning and smart-contract security regressions in CI.
+- `sentinel-test-corpus` verifies that vulnerable fixtures trigger expected findings and fixed fixtures clear targeted security risks.
+- `docs/security-testing.md` documents what is covered and what remains future hardening work.
+
 ## Comparison
 
 | Approach | Strength | Gap SentinelClarity Targets |
@@ -315,6 +326,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | `PROJECT_STATUS.md` | Exact MVP capability and limitation matrix |
 | `docs/architecture.md` | Mermaid architecture diagrams and implementation boundaries |
 | `docs/demo-script.md` | 60-second judge walkthrough |
+| `docs/security-testing.md` | Security testing workflow and coverage |
 | `docs/threat-model.md` | Assets, adversaries, covered risks, and out-of-scope threats |
 | `docs/adr/0001-architecture.md` | Architecture decision record |
 | `docs/rules/` | Security rule catalog |
