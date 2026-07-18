@@ -7,7 +7,8 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Rust workspace | Working | Multi-crate workspace with CI across Ubuntu, macOS, and Windows. |
-| Clarity scanning | Working | Recursively scans `.clar` files from a file or directory path. |
+| Clarity scanning | Working | Deterministically scans bounded `.clar` paths and fails closed on traversal or size errors. |
+| Scan policy | Working | `--config` validates and applies per-rule enablement and severity overrides. |
 | Fix verification | Working | Compares before/after contracts and asserts selected findings are cleared. |
 | Security rules | Working | Six heuristic rule categories are implemented and documented. |
 | Output formats | Working | SARIF, JSON, and markdown output are supported. |
@@ -22,7 +23,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 
 | Area | Current Bound | Production Direction |
 | --- | --- | --- |
-| Clarity parsing | Lightweight function/body extraction | Compiler-grade parser with typed semantic model. |
+| Clarity parsing | Lightweight extraction with balanced-parenthesis/string validation and comment/string sanitization | Compiler-grade parser with typed semantic model. |
 | Vulnerability detection | Focused heuristic rules | Dataflow, interprocedural analysis, and protocol-aware checks. |
 | AI integration | Offline `TriageClient` implementation | Live OpenAI-backed triage with structured responses and policy controls. |
 | PR automation | Fix-package templates and mock PR plan | Real GitHub PR creation with patch application and re-scan verification. |

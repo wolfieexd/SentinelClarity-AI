@@ -27,16 +27,16 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository has completed Sprint 5 security hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. The scanner and local API now enforce bounded input handling and fail closed on unreadable paths; CI adds dependency advisory auditing, CodeQL analysis, and Dependabot maintenance. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
+This repository has completed Sprint 6 production-core hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. The scanner and local API enforce bounded input handling and fail closed on unreadable paths; scanning policies now apply `sentinel.toml` rule enablement and severity overrides, malformed source is rejected before analysis, and comments or strings cannot create rule signals. CI adds dependency advisory auditing, CodeQL analysis, locked builds, and Dependabot maintenance. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
 
 | Area | Status |
 | --- | --- |
 | Rust workspace | Scaffolded |
 | Universal AST and traits | Implemented foundation |
 | SARIF model | Scaffolded |
-| Clarity adapter | Lightweight function and operation extraction |
+| Clarity adapter | Lightweight extraction with structural source validation and comment/string sanitization |
 | Rule engine | Six heuristic rules registered |
-| CLI | Scans `.clar` files, validates config, verifies fixes, serves local API endpoints, and generates completions |
+| CLI | Scans `.clar` files with enforced rule policy, validates config, verifies fixes, serves local API endpoints, and generates completions |
 | GitHub Action | Local composite action with configurable path, config, format, and fail threshold |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
@@ -143,6 +143,8 @@ Planned production commands:
 ## Configuration
 
 SentinelClarity uses `sentinel.toml` for scanner behavior, AI settings, and output policy.
+
+When `--config` is supplied, SentinelClarity validates the TOML schema before scanning and applies each rule's `enabled` and `severity` settings. Unknown rules, unknown settings, missing required sections, malformed TOML, and invalid severities fail closed.
 
 ```toml
 [rules]
@@ -354,6 +356,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
 | Sprint 4 | Production hardening | Security workflow, corpus runner, fix verification, health API |
 | Sprint 5 | Security fortress | Bounded inputs, fail-closed scanning, dependency audit, CodeQL, disclosure policy |
+| Sprint 6 | Production core | Enforced policies, syntax validation, false-positive resistance, locked builds |
 
 ## Future Production Hardening
 
@@ -431,6 +434,16 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add dependency advisory auditing and weekly Dependabot updates.
 - [x] Add scheduled CodeQL analysis for the Rust workspace.
 - [x] Add a responsible disclosure policy in `SECURITY.md`.
+
+### Sprint 6 - Production Core
+
+- [x] Apply `sentinel.toml` rule enablement and severity policy during scans.
+- [x] Reject malformed TOML, unknown rules, and unsafe configuration values.
+- [x] Reject structurally malformed Clarity source before rule execution.
+- [x] Exclude comments and strings from rule matching.
+- [x] Cap recursive scan file counts and keep scan order deterministic.
+- [x] Harden GitHub Action input handling with environment-bound values.
+- [x] Require locked dependency resolution for CI and release builds.
 
 ## OpenAI Build Week 2026
 

@@ -18,6 +18,7 @@ pub fn parse_clarity(source: &str) -> Result<UniversalAST, ParseError> {
             "empty Clarity source".to_string(),
         ));
     }
+    validate_source_syntax(source)?;
 
     let functions = extract_functions(source);
     let traits = extract_trait_names(source);
@@ -34,11 +35,13 @@ pub fn parse_clarity(source: &str) -> Result<UniversalAST, ParseError> {
 
 fn extract_functions(source: &str) -> Vec<Function> {
     let lines: Vec<&str> = source.lines().collect();
+    let sanitized_source = sanitize_clarity_code(source);
+    let sanitized_lines: Vec<&str> = sanitized_source.lines().collect();
     let mut functions = Vec::new();
     let mut line_index = 0;
 
     while line_index < lines.len() {
-        let line = lines[line_index].trim();
+        let line = sanitized_lines[line_index].trim();
         let visibility = if line.contains("(define-public") {
             Some(Visibility::Public)
         } else if line.contains("(define-private") {
@@ -52,11 +55,11 @@ fn extract_functions(source: &str) -> Vec<Function> {
         if let Some(visibility) = visibility {
             let start = line_index;
             let mut end = line_index;
-            let mut balance = paren_delta(lines[line_index]);
+            let mut balance = paren_delta(sanitized_lines[line_index]);
 
             while balance > 0 && end + 1 < lines.len() {
                 end += 1;
-                balance += paren_delta(lines[end]);
+                balance += paren_delta(sanitized_lines[end]);
             }
 
             let body = lines[start..=end].join("\n");
@@ -133,6 +136,7 @@ fn extract_params(body: &str) -> Vec<Param> {
 
 fn extract_statements(body: &str) -> Vec<Stmt> {
     let mut statements = Vec::new();
+    let code = sanitize_clarity_code(body);
 
     for (needle, op) in [
         ("map-set", StorageOp::MapSet("unknown".to_string())),
@@ -140,23 +144,23 @@ fn extract_statements(body: &str) -> Vec<Stmt> {
         ("stx-transfer?", StorageOp::Transfer),
         ("contract-call?", StorageOp::ContractCall),
     ] {
-        if body.contains(needle) {
+        if code.contains(needle) {
             statements.push(Stmt::StateChange(op));
         }
     }
 
-    if body.contains("contract-call?") {
+    if code.contains("contract-call?") {
         statements.push(Stmt::Expr(Expr::Call {
             target: CallTarget::External {
                 contract: "unknown".to_string(),
                 function: "unknown".to_string(),
             },
             args: Vec::new(),
-            checked: body.contains("try!") || body.contains("match"),
+            checked: code.contains("try!") || code.contains("match"),
         }));
     }
 
-    statements.push(Stmt::Expr(Expr::Literal(body.to_string())));
+    statements.push(Stmt::Expr(Expr::Literal(code)));
     statements
 }
 
@@ -187,4 +191,148 @@ fn extract_trait_names(source: &str) -> Vec<String> {
             }
         })
         .collect()
+}
+
+fn validate_source_syntax(source: &str) -> Result<(), ParseError> {
+    let mut depth = 0_i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut in_comment = false;
+
+    for (index, character) in source.char_indices() {
+        if in_comment {
+            if character == '\n' {
+                in_comment = false;
+            }
+            continue;
+        }
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+        if source[index..].starts_with(";;") {
+            in_comment = true;
+            continue;
+        }
+        match character {
+            '"' => in_string = true,
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth < 0 {
+                    return Err(ParseError::InvalidSource(format!(
+                        "unexpected closing parenthesis near byte {index}"
+                    )));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    if in_string {
+        return Err(ParseError::InvalidSource(
+            "unterminated string literal".to_string(),
+        ));
+    }
+    if depth != 0 {
+        return Err(ParseError::InvalidSource(
+            "unbalanced parentheses".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn sanitize_clarity_code(source: &str) -> String {
+    let mut sanitized = String::with_capacity(source.len());
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut in_comment = false;
+    let characters = source.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < characters.len() {
+        let character = characters[index];
+        if in_comment {
+            if character == '\n' {
+                in_comment = false;
+                sanitized.push('\n');
+            } else {
+                sanitized.push(' ');
+            }
+            index += 1;
+            continue;
+        }
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if character == '\\' {
+                escaped = true;
+            } else if character == '"' {
+                in_string = false;
+            }
+            sanitized.push(if character == '\n' { '\n' } else { ' ' });
+            index += 1;
+            continue;
+        }
+        if character == ';' && characters.get(index + 1) == Some(&';') {
+            in_comment = true;
+            sanitized.push(' ');
+            sanitized.push(' ');
+            index += 2;
+            continue;
+        }
+        if character == '"' {
+            in_string = true;
+            sanitized.push(' ');
+        } else {
+            sanitized.push(character);
+        }
+        index += 1;
+    }
+
+    sanitized
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sentinel_core::LanguageAdapter;
+
+    #[test]
+    fn malformed_source_is_rejected_before_scanning() {
+        assert!(ClarityAdapter
+            .parse("(define-public (broken) (ok true)")
+            .is_err());
+        assert!(ClarityAdapter
+            .parse("(define-public (broken) \"unterminated)")
+            .is_err());
+    }
+
+    #[test]
+    fn comments_and_strings_do_not_create_security_findings() {
+        let source = r#"
+            ;; (define-public (set-owner) (var-set owner tx-sender))
+            (define-read-only (message) "contract-call? map-set var-set")
+        "#;
+        let ast = ClarityAdapter.parse(source).expect("source parses");
+        let function = ast.functions().pop().expect("function is extracted");
+        let body = function
+            .body
+            .iter()
+            .find_map(|statement| match statement {
+                Stmt::Expr(Expr::Literal(body)) => Some(body.as_str()),
+                _ => None,
+            })
+            .expect("function body is present");
+
+        assert!(!body.contains("contract-call?"));
+        assert!(!body.contains("map-set"));
+        assert!(!body.contains("var-set"));
+    }
 }

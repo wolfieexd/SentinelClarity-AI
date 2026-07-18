@@ -35,11 +35,11 @@ echo "No high-risk secret patterns found."
 echo
 
 echo "2. Running smart-contract security regression tests"
-cargo test -p sentinel-test-corpus security_
+cargo test --locked -p sentinel-test-corpus security_
 echo
 
 echo "3. Verifying fixed contract clears targeted finding"
-cargo run --package sentinel-cli -- verify-fix \
+cargo run --locked --package sentinel-cli -- verify-fix \
   --before sentinel-test-corpus/contracts/handcrafted/reentrancy/vulnerable.clar \
   --after sentinel-test-corpus/contracts/handcrafted/reentrancy/fixed.clar \
   --clears SC-REENTRANCY

@@ -5,6 +5,7 @@ use sentinel_ai::{ContextBuilder, HeuristicTriageClient, TriageEngine, TriagedFi
 use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
 use sentinel_engine::{default_registry, Scanner};
+use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -13,6 +14,7 @@ use std::time::Duration;
 use walkdir::WalkDir;
 
 const MAX_SCAN_FILE_BYTES: u64 = 2 * 1024 * 1024;
+const MAX_SCAN_FILES: usize = 10_000;
 const MAX_HTTP_HEADER_BYTES: usize = 16 * 1024;
 const MAX_HTTP_BODY_BYTES: usize = 512 * 1024;
 const HTTP_READ_TIMEOUT: Duration = Duration::from_secs(5);
@@ -36,8 +38,8 @@ enum Command {
         output: Option<PathBuf>,
         #[arg(long)]
         config: Option<PathBuf>,
-        #[arg(long, default_value = "HIGH")]
-        fail_on: String,
+        #[arg(long, value_enum)]
+        fail_on: Option<FailSeverity>,
         #[arg(long)]
         triage: bool,
     },
@@ -79,6 +81,64 @@ enum OutputFormat {
     Json,
 }
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum FailSeverity {
+    Critical,
+    High,
+    Medium,
+    Low,
+}
+
+impl FailSeverity {
+    fn as_severity(self) -> Severity {
+        match self {
+            Self::Critical => Severity::Critical,
+            Self::High => Severity::High,
+            Self::Medium => Severity::Medium,
+            Self::Low => Severity::Low,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct ScanPolicy {
+    rules: BTreeMap<String, RulePolicy>,
+    fail_on: Severity,
+}
+
+impl Default for ScanPolicy {
+    fn default() -> Self {
+        Self {
+            rules: BTreeMap::new(),
+            fail_on: Severity::High,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RulePolicy {
+    enabled: bool,
+    severity: Severity,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConfigFile {
+    rules: BTreeMap<String, ConfigRule>,
+    output: ConfigOutput,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ConfigRule {
+    enabled: bool,
+    severity: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConfigOutput {
+    fail_on_severity: String,
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
@@ -91,7 +151,11 @@ fn main() -> Result<()> {
             fail_on,
             triage,
         } => {
-            let scan_results = scan_path(&path)?;
+            let policy = load_scan_policy(config.as_deref())?;
+            let fail_on = fail_on
+                .map(FailSeverity::as_severity)
+                .unwrap_or(policy.fail_on);
+            let scan_results = scan_path(&path, &policy)?;
             let findings = scan_results
                 .iter()
                 .flat_map(|result| result.findings.clone())
@@ -101,10 +165,15 @@ fn main() -> Result<()> {
                 OutputFormat::Sarif | OutputFormat::Json => serde_json::to_string_pretty(&report)?,
                 OutputFormat::Markdown if triage => {
                     let triaged = triage_results(&scan_results)?;
-                    render_triage_markdown(&path, config.as_deref(), &fail_on, &triaged)
+                    render_triage_markdown(
+                        &path,
+                        config.as_deref(),
+                        severity_label(fail_on),
+                        &triaged,
+                    )
                 }
                 OutputFormat::Markdown => {
-                    render_markdown(&path, config.as_deref(), &fail_on, &findings)
+                    render_markdown(&path, config.as_deref(), severity_label(fail_on), &findings)
                 }
             };
 
@@ -114,7 +183,7 @@ fn main() -> Result<()> {
                 println!("{rendered}");
             }
 
-            if has_blocking_findings(&findings, &fail_on) {
+            if has_blocking_findings(&findings, fail_on) {
                 std::process::exit(1);
             }
         }
@@ -175,8 +244,76 @@ struct FileScanResult {
     findings: Vec<Finding>,
 }
 
-fn scan_path(path: &Path) -> Result<Vec<FileScanResult>> {
-    let scanner = Scanner::new(ClarityAdapter, default_registry());
+const KNOWN_RULE_IDS: [&str; 6] = [
+    "SC-REENTRANCY",
+    "SC-ACCESS",
+    "SC-OVERFLOW",
+    "SC-UNCHECKED",
+    "SC-TRAIT",
+    "SC-READONLY",
+];
+
+fn load_scan_policy(config_path: Option<&Path>) -> Result<ScanPolicy> {
+    let Some(config_path) = config_path else {
+        return Ok(ScanPolicy::default());
+    };
+    let config_text = std::fs::read_to_string(config_path)
+        .with_context(|| format!("failed to read {}", config_path.display()))?;
+    let warnings = validate_config(&config_text);
+    if !warnings.is_empty() {
+        anyhow::bail!(
+            "invalid configuration in {}: {}",
+            config_path.display(),
+            warnings.join("; ")
+        );
+    }
+    let config: ConfigFile = toml::from_str(&config_text)
+        .with_context(|| format!("failed to parse {} as TOML", config_path.display()))?;
+    let mut policy = ScanPolicy {
+        fail_on: parse_config_severity(&config.output.fail_on_severity)
+            .context("invalid `[output] fail_on_severity`")?,
+        ..ScanPolicy::default()
+    };
+
+    for (rule_id, rule_config) in config.rules {
+        if !KNOWN_RULE_IDS.contains(&rule_id.as_str()) {
+            anyhow::bail!("unknown rule `{rule_id}` in {}", config_path.display());
+        }
+        let severity = parse_config_severity(&rule_config.severity)
+            .with_context(|| format!("invalid severity for `{rule_id}`"))?;
+        policy.rules.insert(
+            rule_id,
+            RulePolicy {
+                enabled: rule_config.enabled,
+                severity,
+            },
+        );
+    }
+
+    Ok(policy)
+}
+
+fn parse_config_severity(value: &str) -> Result<Severity> {
+    match value.to_ascii_lowercase().as_str() {
+        "critical" => Ok(Severity::Critical),
+        "high" => Ok(Severity::High),
+        "medium" => Ok(Severity::Medium),
+        "low" => Ok(Severity::Low),
+        _ => anyhow::bail!("expected critical, high, medium, or low"),
+    }
+}
+
+fn scanner_with_policy(policy: &ScanPolicy) -> Scanner<ClarityAdapter> {
+    let mut registry = default_registry();
+    for (rule_id, rule_policy) in &policy.rules {
+        registry.set_rule_enabled(rule_id, rule_policy.enabled);
+        registry.set_rule_severity(rule_id, rule_policy.severity);
+    }
+    Scanner::new(ClarityAdapter, registry)
+}
+
+fn scan_path(path: &Path, policy: &ScanPolicy) -> Result<Vec<FileScanResult>> {
+    let scanner = scanner_with_policy(policy);
     let mut results = Vec::new();
 
     for file in clarity_files(path)? {
@@ -431,7 +568,7 @@ fn scan_http_body(body: &[u8]) -> (&'static str, String) {
         );
     }
 
-    let scanner = Scanner::new(ClarityAdapter, default_registry());
+    let scanner = scanner_with_policy(&ScanPolicy::default());
     match scanner.scan_findings(source) {
         Ok(findings) => {
             let report = SarifReport::from_findings(findings);
@@ -454,7 +591,7 @@ fn test_corpus(all: bool, rule: Option<&str>) -> Result<String> {
     }
 
     let root = corpus_contract_root();
-    let scanner = Scanner::new(ClarityAdapter, default_registry());
+    let scanner = scanner_with_policy(&ScanPolicy::default());
     let mut checked = 0usize;
     let mut failures = Vec::new();
 
@@ -500,8 +637,9 @@ fn test_corpus(all: bool, rule: Option<&str>) -> Result<String> {
 }
 
 fn verify_fix(before: &Path, after: &Path, clears: &[String]) -> Result<String> {
-    let before_results = scan_path(before)?;
-    let after_results = scan_path(after)?;
+    let policy = ScanPolicy::default();
+    let before_results = scan_path(before, &policy)?;
+    let after_results = scan_path(after, &policy)?;
     let before_rules = collect_rule_ids(&before_results);
     let after_rules = collect_rule_ids(&after_results);
     let rules_to_check = if clears.is_empty() {
@@ -600,6 +738,12 @@ fn clarity_files(path: &Path) -> Result<Vec<PathBuf>> {
         .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("clar"))
         .collect::<Vec<_>>();
     files.sort();
+    if files.len() > MAX_SCAN_FILES {
+        anyhow::bail!(
+            "refusing to scan {} files: limit is {MAX_SCAN_FILES}",
+            files.len()
+        );
+    }
 
     Ok(files)
 }
@@ -730,64 +874,128 @@ fn default_rule_docs() -> BTreeMap<String, String> {
     .collect()
 }
 
-fn has_blocking_findings(findings: &[Finding], fail_on: &str) -> bool {
-    let threshold = parse_severity(fail_on);
+fn has_blocking_findings(findings: &[Finding], threshold: Severity) -> bool {
     findings.iter().any(|finding| finding.severity >= threshold)
 }
 
-fn parse_severity(value: &str) -> Severity {
-    match value.to_ascii_lowercase().as_str() {
-        "critical" => Severity::Critical,
-        "medium" => Severity::Medium,
-        "low" => Severity::Low,
-        _ => Severity::High,
+fn severity_label(severity: Severity) -> &'static str {
+    match severity {
+        Severity::Critical => "critical",
+        Severity::High => "high",
+        Severity::Medium => "medium",
+        Severity::Low => "low",
     }
 }
 
 fn validate_config(config_text: &str) -> Vec<String> {
+    let parsed = match config_text.parse::<toml::Value>() {
+        Ok(value) => value,
+        Err(error) => return vec![format!("invalid TOML: {error}")],
+    };
+    let Some(root) = parsed.as_table() else {
+        return vec!["configuration must be a TOML table".to_string()];
+    };
     let mut warnings = Vec::new();
 
-    for section in ["[rules]", "[ai]", "[output]"] {
-        if !config_text.contains(section) {
-            warnings.push(format!("missing required section `{section}`"));
+    for section in ["rules", "ai", "output"] {
+        if !root.contains_key(section) {
+            warnings.push(format!("missing required section `[{section}]`"));
         }
     }
 
-    for rule_id in [
-        "SC-REENTRANCY",
-        "SC-ACCESS",
-        "SC-OVERFLOW",
-        "SC-UNCHECKED",
-        "SC-TRAIT",
-        "SC-READONLY",
-    ] {
-        if !config_text.contains(rule_id) {
-            warnings.push(format!("missing rule configuration for `{rule_id}`"));
+    for key in root.keys() {
+        if !matches!(key.as_str(), "rules" | "ai" | "output") {
+            warnings.push(format!("unknown top-level section `[{key}]`"));
         }
     }
 
-    if !config_text.contains("model =") {
-        warnings.push("missing `[ai] model` setting".to_string());
+    if let Some(rules) = root.get("rules").and_then(toml::Value::as_table) {
+        for rule_id in KNOWN_RULE_IDS {
+            let Some(rule) = rules.get(rule_id).and_then(toml::Value::as_table) else {
+                warnings.push(format!("missing rule configuration for `{rule_id}`"));
+                continue;
+            };
+            if !rule.get("enabled").is_some_and(toml::Value::is_bool) {
+                warnings.push(format!("`{rule_id}` requires boolean `enabled`"));
+            }
+            match rule.get("severity").and_then(toml::Value::as_str) {
+                Some(value) if parse_config_severity(value).is_ok() => {}
+                _ => warnings.push(format!("`{rule_id}` requires a valid `severity`")),
+            }
+            for key in rule.keys() {
+                if !matches!(key.as_str(), "enabled" | "severity") {
+                    warnings.push(format!("unknown `{rule_id}` setting `{key}`"));
+                }
+            }
+        }
+        for rule_id in rules.keys() {
+            if !KNOWN_RULE_IDS.contains(&rule_id.as_str()) {
+                warnings.push(format!("unknown rule `{rule_id}`"));
+            }
+        }
+    } else if root.contains_key("rules") {
+        warnings.push("`[rules]` must be a table".to_string());
     }
 
-    if !config_text.contains("formats =") {
-        warnings.push("missing `[output] formats` setting".to_string());
-    }
+    validate_config_section(
+        root,
+        "ai",
+        &[
+            "model",
+            "triage_enabled",
+            "fix_enabled",
+            "context_lines",
+            "max_context_tokens",
+        ],
+        &mut warnings,
+    );
+    validate_config_section(
+        root,
+        "output",
+        &["formats", "annotate_pr", "fail_on_severity"],
+        &mut warnings,
+    );
 
-    for line in config_text
-        .lines()
-        .filter(|line| line.contains("severity ="))
+    if !root
+        .get("ai")
+        .and_then(toml::Value::as_table)
+        .and_then(|table| table.get("model"))
+        .is_some_and(toml::Value::is_str)
     {
-        let normalized = line.to_ascii_lowercase();
-        if !["critical", "high", "medium", "low"]
-            .iter()
-            .any(|severity| normalized.contains(severity))
-        {
-            warnings.push(format!("unknown severity in `{}`", line.trim()));
+        warnings.push("`[ai] model` must be a string".to_string());
+    }
+    if let Some(output) = root.get("output").and_then(toml::Value::as_table) {
+        if !output.get("formats").is_some_and(toml::Value::is_array) {
+            warnings.push("`[output] formats` must be an array".to_string());
+        }
+        match output.get("fail_on_severity").and_then(toml::Value::as_str) {
+            Some(value) if parse_config_severity(value).is_ok() => {}
+            _ => warnings.push("`[output] fail_on_severity` must be valid".to_string()),
         }
     }
 
     warnings
+}
+
+fn validate_config_section(
+    root: &toml::map::Map<String, toml::Value>,
+    name: &str,
+    required_keys: &[&str],
+    warnings: &mut Vec<String>,
+) {
+    let Some(section) = root.get(name).and_then(toml::Value::as_table) else {
+        return;
+    };
+    for key in required_keys {
+        if !section.contains_key(*key) {
+            warnings.push(format!("missing `[{name}] {key}` setting"));
+        }
+    }
+    for key in section.keys() {
+        if !required_keys.contains(&key.as_str()) {
+            warnings.push(format!("unknown `[{name}]` setting `{key}`"));
+        }
+    }
 }
 
 #[cfg(test)]
@@ -805,6 +1013,60 @@ mod tests {
         let warnings = validate_config("[rules]\n");
         assert!(warnings.iter().any(|warning| warning.contains("[ai]")));
         assert!(warnings.iter().any(|warning| warning.contains("[output]")));
+    }
+
+    #[test]
+    fn config_validation_rejects_unknown_rules_and_invalid_types() {
+        let config = r#"
+            [rules]
+            SC-REENTRANCY = { enabled = "yes", severity = "urgent" }
+            SC-ACCESS = { enabled = true, severity = "high" }
+            SC-OVERFLOW = { enabled = true, severity = "high" }
+            SC-UNCHECKED = { enabled = true, severity = "medium" }
+            SC-TRAIT = { enabled = true, severity = "medium" }
+            SC-READONLY = { enabled = true, severity = "high" }
+            SC-TYPO = { enabled = true, severity = "high" }
+
+            [ai]
+            model = "test"
+            triage_enabled = true
+            fix_enabled = false
+            context_lines = 1
+            max_context_tokens = 1
+
+            [output]
+            formats = ["sarif"]
+            annotate_pr = false
+            fail_on_severity = "high"
+        "#;
+        let warnings = validate_config(config);
+
+        assert!(warnings
+            .iter()
+            .any(|warning| warning.contains("SC-REENTRANCY")));
+        assert!(warnings.iter().any(|warning| warning.contains("SC-TYPO")));
+    }
+
+    #[test]
+    fn scan_policy_applies_rule_and_exit_threshold_settings() {
+        let config_path = std::env::temp_dir().join(format!(
+            "sentinel-clarity-policy-{}.toml",
+            std::process::id()
+        ));
+        std::fs::write(&config_path, include_str!("../../sentinel.toml"))
+            .expect("temporary config is written");
+        let policy = load_scan_policy(Some(&config_path)).expect("policy loads");
+        std::fs::remove_file(&config_path).expect("temporary config is removed");
+
+        assert_eq!(policy.fail_on, Severity::High);
+        assert_eq!(
+            policy.rules.get("SC-REENTRANCY").map(|rule| rule.severity),
+            Some(Severity::Critical)
+        );
+        assert!(policy
+            .rules
+            .get("SC-READONLY")
+            .is_some_and(|rule| rule.enabled));
     }
 
     #[test]

@@ -42,10 +42,10 @@ jobs:
             exit 1
           fi
       - name: Smart-contract security regressions
-        run: cargo test -p sentinel-test-corpus security_
+        run: cargo test --locked -p sentinel-test-corpus security_
       - name: Fix verification smoke test
         run: |
-          cargo run --package sentinel-cli -- verify-fix \
+          cargo run --locked --package sentinel-cli -- verify-fix \
             --before sentinel-test-corpus/contracts/handcrafted/reentrancy/vulnerable.clar \
             --after sentinel-test-corpus/contracts/handcrafted/reentrancy/fixed.clar \
             --clears SC-REENTRANCY

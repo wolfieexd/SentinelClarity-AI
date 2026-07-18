@@ -21,9 +21,17 @@ The local `serve` API is deliberately constrained to reduce its attack surface:
 - It binds only to `127.0.0.1`, not to external network interfaces.
 - It enforces a five-second read/write timeout.
 - It caps headers at 16 KiB, request bodies at 512 KiB, and scanned files at 2 MiB.
+- Recursive filesystem scans are capped at 10,000 `.clar` files and fail instead of silently skipping traversal errors.
 - It accepts only `GET /health`, `GET /version`, and `POST /scan` with raw UTF-8 Clarity source.
 - It rejects duplicate `Content-Length`, transfer encodings, incomplete bodies, unsupported query strings, and invalid UTF-8.
 - Error responses are JSON-escaped and include `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
+
+## Policy and Parser Checks
+
+- Explicit `--config` files are parsed as TOML and fail closed for missing required sections, unknown rules/settings, invalid rule severities, or invalid output policy severity.
+- Rule enablement and severity overrides are applied by the registry itself, so SARIF, markdown, JSON, fix verification, and exit status share the same security policy.
+- The Clarity adapter rejects unbalanced parentheses and unterminated strings before rule execution.
+- Rule matching uses sanitized code, preventing comments and string literals from fabricating apparent dangerous operations.
 
 ## Local Command
 

@@ -25,6 +25,11 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: cargo build --release --package sentinel-cli
+      run: cargo build --locked --release --package sentinel-cli
     - shell: bash
-      run: ./target/release/sentinel-clarity scan "${{ inputs.path }}" --config "${{ inputs.config }}" --format "${{ inputs.format }}" --fail-on "${{ inputs.fail-on }}"
+      env:
+        SENTINEL_PATH: ${{ inputs.path }}
+        SENTINEL_CONFIG: ${{ inputs.config }}
+        SENTINEL_FORMAT: ${{ inputs.format }}
+        SENTINEL_FAIL_ON: ${{ inputs.fail-on }}
+      run: ./target/release/sentinel-clarity scan "$SENTINEL_PATH" --config "$SENTINEL_CONFIG" --format "$SENTINEL_FORMAT" --fail-on "$SENTINEL_FAIL_ON"
