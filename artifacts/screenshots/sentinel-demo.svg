@@ -90,7 +90,7 @@
       <text class="line l6 yellow" x="38" y="298">[HIGH]     SC-OVERFLOW    arithmetic requires overflow review</text>
       <text class="line l7 purple" x="38" y="338">[MEDIUM]   SC-UNCHECKED   response lacks explicit handling</text>
       <text class="line l8 cyan" x="38" y="374">AI triage: exploitability, blast radius, root cause, fix strategy</text>
-      <text class="line l9 green" x="38" y="430">Report ready: demo-output.md + sentinel-results.sarif</text>
+      <text class="line l9 green" x="38" y="412">Report ready: demo-output.md + sentinel-results.sarif</text>
     </g>
   </g>
 </svg>
