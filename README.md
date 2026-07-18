@@ -406,11 +406,17 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add architecture diagrams.
 - [x] Add release binary workflow.
 - [x] Confirm all CI gates are green.
+- [ ] Submit Devpost package.
+
+### Sprint 4 - Production Hardening
+
 - [x] Add cybersecurity validation workflow.
 - [x] Implement corpus expectation runner.
 - [x] Add before/after fix verification command.
 - [x] Add minimal HTTP health/version/scan API.
-- [ ] Submit Devpost package.
+- [x] Add `POST /scan` local API endpoint.
+- [x] Add GitHub Action `path` input.
+- [x] Keep CI and Security workflows green.
 
 ## OpenAI Build Week 2026
 
