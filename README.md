@@ -36,8 +36,8 @@ This repository is in Sprint 4 hardening of the OpenAI Build Week implementation
 | SARIF model | Scaffolded |
 | Clarity adapter | Lightweight function and operation extraction |
 | Rule engine | Six heuristic rules registered |
-| CLI | Scans `.clar` files, validates config, verifies fixes, serves health endpoints, and generates completions |
-| GitHub Action | Template scaffolded |
+| CLI | Scans `.clar` files, validates config, verifies fixes, serves local API endpoints, and generates completions |
+| GitHub Action | Local composite action with configurable path, config, format, and fail threshold |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
 | Security validation | Secret scan plus smart-contract security regression workflow |
@@ -137,7 +137,7 @@ Planned production commands:
 | `completions <SHELL>` | Generate shell completions for Bash, Zsh, Fish, PowerShell, or Elvish |
 | `test-corpus` | Run curated corpus expectations for all rules or a selected rule |
 | `verify-fix` | Compare vulnerable and fixed contracts and assert selected findings are cleared |
-| `serve` | Start a minimal local HTTP API with `/health` and `/version` |
+| `serve` | Start a minimal local HTTP API with `/health`, `/version`, and `POST /scan` |
 | `version` | Print the CLI version |
 
 ## Configuration
@@ -258,7 +258,7 @@ SentinelClarity is a polished hackathon MVP, not a complete audit replacement.
 - Live OpenAI API triage is not connected yet; offline triage mirrors the planned response shape.
 - PR automation is represented by fix-package templates and a mock remediation plan.
 - The corpus includes handcrafted, demo, and regression fixtures, but not a large labeled mainnet dataset.
-- The HTTP API currently exposes health/version endpoints only; scan endpoints remain future work.
+- The HTTP API is intentionally minimal and accepts raw Clarity source over `POST /scan`; richer editor APIs remain future work.
 - Findings should be reviewed by developers or auditors before production decisions.
 
 ## Security Testing
@@ -358,7 +358,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - Connect `TriageClient` to live OpenAI structured outputs.
 - Add approval-gated GitHub PR creation for generated fixes.
 - Expand corpus with labeled mainnet contracts and fuzzed edge cases.
-- Add scan endpoints to the `serve` API for IDE and editor integrations.
+- Add richer editor-oriented routes to the `serve` API.
 
 ## Sprint Checklist
 
@@ -409,7 +409,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add cybersecurity validation workflow.
 - [x] Implement corpus expectation runner.
 - [x] Add before/after fix verification command.
-- [x] Add minimal HTTP health API.
+- [x] Add minimal HTTP health/version/scan API.
 - [ ] Submit Devpost package.
 
 ## OpenAI Build Week 2026

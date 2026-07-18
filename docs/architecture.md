@@ -63,6 +63,7 @@ sequenceDiagram
 - Prefer small fix packages over broad rewrites.
 - Make SARIF useful for GitHub code scanning.
 - Preserve a language-agnostic core for future adapters.
+- Expose a small local HTTP surface for health checks and raw-source scan experiments.
 
 ## Current Implementation Boundaries
 

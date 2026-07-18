@@ -197,7 +197,7 @@ fn serve(port: u16) -> Result<()> {
     let listener = TcpListener::bind(("127.0.0.1", port))
         .with_context(|| format!("failed to bind HTTP API to 127.0.0.1:{port}"))?;
     println!("SentinelClarity HTTP API listening on http://127.0.0.1:{port}");
-    println!("Endpoints: GET /health, GET /version");
+    println!("Endpoints: GET /health, GET /version, POST /scan");
 
     for stream in listener.incoming() {
         let stream = stream.context("failed to accept HTTP connection")?;
@@ -208,27 +208,29 @@ fn serve(port: u16) -> Result<()> {
 }
 
 fn handle_connection(mut stream: TcpStream) -> Result<()> {
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 65536];
     let bytes_read = stream.read(&mut buffer)?;
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
-    let path = request
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-        .unwrap_or("/");
+    let (method, path) = request_line_parts(&request);
+    let request_body = request
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body)
+        .unwrap_or_default();
 
-    let (status, body) = match path {
-        "/health" => (
+    let (status, body) = match (method, path) {
+        ("GET", "/health") => (
             "200 OK",
             r#"{"status":"ok","service":"sentinel-clarity"}"#.to_string(),
         ),
-        "/version" => (
+        ("GET", "/version") => (
             "200 OK",
             format!(r#"{{"version":"{}"}}"#, env!("CARGO_PKG_VERSION")),
         ),
+        ("POST", "/scan") => scan_http_body(request_body),
         _ => (
             "404 Not Found",
-            r#"{"error":"not found","endpoints":["/health","/version"]}"#.to_string(),
+            r#"{"error":"not found","endpoints":["GET /health","GET /version","POST /scan"]}"#
+                .to_string(),
         ),
     };
 
@@ -238,6 +240,42 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
     );
     stream.write_all(response.as_bytes())?;
     Ok(())
+}
+
+fn request_line_parts(request: &str) -> (&str, &str) {
+    let mut parts = request
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .split_whitespace();
+    let method = parts.next().unwrap_or_default();
+    let path = parts.next().unwrap_or("/");
+    (method, path)
+}
+
+fn scan_http_body(source: &str) -> (&'static str, String) {
+    if source.trim().is_empty() {
+        return (
+            "400 Bad Request",
+            r#"{"error":"POST /scan requires raw Clarity source in the request body"}"#.to_string(),
+        );
+    }
+
+    let scanner = Scanner::new(ClarityAdapter, default_registry());
+    match scanner.scan_findings(source) {
+        Ok(findings) => {
+            let report = SarifReport::from_findings(findings);
+            (
+                "200 OK",
+                serde_json::to_string(&report)
+                    .unwrap_or_else(|error| format!(r#"{{"error":"{error}"}}"#)),
+            )
+        }
+        Err(error) => (
+            "422 Unprocessable Entity",
+            format!(r#"{{"error":"failed to parse source","detail":"{error}"}}"#),
+        ),
+    }
 }
 
 fn test_corpus(all: bool, rule: Option<&str>) -> Result<String> {
@@ -614,5 +652,30 @@ mod tests {
                 "SC-UNCHECKED",
             ])
         );
+    }
+
+    #[test]
+    fn request_line_parts_extract_method_and_path() {
+        let (method, path) = request_line_parts("POST /scan HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        assert_eq!(method, "POST");
+        assert_eq!(path, "/scan");
+    }
+
+    #[test]
+    fn scan_http_body_returns_sarif_json() {
+        let (status, body) = scan_http_body(
+            "(define-public (pay) (contract-call? .token transfer u1 tx-sender contract-caller))",
+        );
+
+        assert_eq!(status, "200 OK");
+        assert!(body.contains("SC-UNCHECKED"));
+    }
+
+    #[test]
+    fn scan_http_body_rejects_empty_body() {
+        let (status, body) = scan_http_body("");
+
+        assert_eq!(status, "400 Bad Request");
+        assert!(body.contains("requires raw Clarity source"));
     }
 }

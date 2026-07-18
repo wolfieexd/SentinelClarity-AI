@@ -1,6 +1,10 @@
 name: SentinelClarity
 description: Scan Clarity smart contracts with SentinelClarity
 inputs:
+  path:
+    description: File or directory containing Clarity contracts
+    required: false
+    default: .
   config:
     description: Path to sentinel.toml
     required: false
@@ -23,4 +27,4 @@ runs:
     - shell: bash
       run: cargo build --release --package sentinel-cli
     - shell: bash
-      run: ./target/release/sentinel-clarity scan . --config "${{ inputs.config }}" --format "${{ inputs.format }}" --fail-on "${{ inputs.fail-on }}"
+      run: ./target/release/sentinel-clarity scan "${{ inputs.path }}" --config "${{ inputs.config }}" --format "${{ inputs.format }}" --fail-on "${{ inputs.fail-on }}"

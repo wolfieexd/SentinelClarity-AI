@@ -27,7 +27,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI integration | Offline `TriageClient` implementation | Live OpenAI-backed triage with structured responses and policy controls. |
 | PR automation | Fix-package templates and mock PR plan | Real GitHub PR creation with patch application and re-scan verification. |
 | Corpus | Handcrafted, demo, and regression fixtures | Mainnet-scale labeled corpus and fuzzed edge cases. |
-| HTTP server | Minimal `/health` and `/version` endpoints | Production scan API for IDE/editor integrations. |
+| HTTP server | Minimal `/health`, `/version`, and `POST /scan` endpoints | Richer production API for IDE/editor integrations. |
 
 ## Judge-Ready Claim
 
