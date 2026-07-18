@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::{generate, Shell};
 use sentinel_ai::{ContextBuilder, HeuristicTriageClient, TriageEngine, TriagedFinding};
 use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
@@ -36,7 +37,16 @@ enum Command {
         #[arg(long, default_value_t = 8080)]
         port: u16,
     },
-    Init,
+    Init {
+        #[arg(long)]
+        validate: bool,
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
+    Completions {
+        #[arg(value_enum)]
+        shell: Shell,
+    },
     TestCorpus {
         #[arg(long)]
         all: bool,
@@ -95,8 +105,33 @@ fn main() -> Result<()> {
         Command::Serve { port } => {
             println!("SentinelClarity HTTP API scaffold listening target: {port}");
         }
-        Command::Init => {
-            println!("{}", include_str!("../../sentinel.toml"));
+        Command::Init { validate, config } => {
+            if validate {
+                let config_path = config.unwrap_or_else(|| PathBuf::from("sentinel.toml"));
+                let config_text = std::fs::read_to_string(&config_path)
+                    .with_context(|| format!("failed to read {}", config_path.display()))?;
+                let warnings = validate_config(&config_text);
+
+                if warnings.is_empty() {
+                    println!("{} is valid.", config_path.display());
+                } else {
+                    for warning in warnings {
+                        eprintln!("config warning: {warning}");
+                    }
+                    std::process::exit(2);
+                }
+            } else {
+                println!("{}", include_str!("../../sentinel.toml"));
+            }
+        }
+        Command::Completions { shell } => {
+            let mut command = Cli::command();
+            generate(
+                shell,
+                &mut command,
+                "sentinel-clarity",
+                &mut std::io::stdout(),
+            );
         }
         Command::TestCorpus { all, rule } => {
             println!("Test corpus scaffold selected: all={all}, rule={rule:?}");
@@ -291,5 +326,69 @@ fn parse_severity(value: &str) -> Severity {
         "medium" => Severity::Medium,
         "low" => Severity::Low,
         _ => Severity::High,
+    }
+}
+
+fn validate_config(config_text: &str) -> Vec<String> {
+    let mut warnings = Vec::new();
+
+    for section in ["[rules]", "[ai]", "[output]"] {
+        if !config_text.contains(section) {
+            warnings.push(format!("missing required section `{section}`"));
+        }
+    }
+
+    for rule_id in [
+        "SC-REENTRANCY",
+        "SC-ACCESS",
+        "SC-OVERFLOW",
+        "SC-UNCHECKED",
+        "SC-TRAIT",
+        "SC-READONLY",
+    ] {
+        if !config_text.contains(rule_id) {
+            warnings.push(format!("missing rule configuration for `{rule_id}`"));
+        }
+    }
+
+    if !config_text.contains("model =") {
+        warnings.push("missing `[ai] model` setting".to_string());
+    }
+
+    if !config_text.contains("formats =") {
+        warnings.push("missing `[output] formats` setting".to_string());
+    }
+
+    for line in config_text
+        .lines()
+        .filter(|line| line.contains("severity ="))
+    {
+        let normalized = line.to_ascii_lowercase();
+        if !["critical", "high", "medium", "low"]
+            .iter()
+            .any(|severity| normalized.contains(severity))
+        {
+            warnings.push(format!("unknown severity in `{}`", line.trim()));
+        }
+    }
+
+    warnings
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_is_valid() {
+        let warnings = validate_config(include_str!("../../sentinel.toml"));
+        assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
+    }
+
+    #[test]
+    fn missing_sections_are_reported() {
+        let warnings = validate_config("[rules]\n");
+        assert!(warnings.iter().any(|warning| warning.contains("[ai]")));
+        assert!(warnings.iter().any(|warning| warning.contains("[output]")));
     }
 }

@@ -23,7 +23,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository is in Sprint 2 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, rule documentation, offline triage engine, and fix-package templates are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation are planned for the next sprints.
+This repository is in Sprint 3 of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, handcrafted corpus fixtures, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, and demo script are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future hardening work.
 
 | Area | Status |
 | --- | --- |
@@ -32,7 +32,7 @@ This repository is in Sprint 2 of the OpenAI Build Week implementation plan. The
 | SARIF model | Scaffolded |
 | Clarity adapter | Lightweight function and operation extraction |
 | Rule engine | Six heuristic rules registered |
-| CLI | Scans `.clar` files and directories |
+| CLI | Scans `.clar` files, validates config, and generates completions |
 | GitHub Action | Template scaffolded |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted vulnerable/fixed fixtures |
@@ -93,6 +93,8 @@ cargo run --package sentinel-cli -- scan . --format sarif
 cargo run --package sentinel-cli -- scan ./contracts --format markdown
 cargo run --package sentinel-cli -- scan ./contracts --format markdown --triage
 cargo run --package sentinel-cli -- init
+cargo run --package sentinel-cli -- init --validate --config sentinel.toml
+cargo run --package sentinel-cli -- completions powershell
 cargo run --package sentinel-cli -- test-corpus --all
 ```
 
@@ -101,7 +103,8 @@ Planned production commands:
 | Command | Purpose |
 | --- | --- |
 | `scan [PATH]` | Scan Clarity contracts and emit SARIF, JSON, or markdown |
-| `init` | Print or create a default `sentinel.toml` |
+| `init` | Print a default `sentinel.toml` or validate an existing config |
+| `completions <SHELL>` | Generate shell completions for Bash, Zsh, Fish, PowerShell, or Elvish |
 | `test-corpus` | Run curated contract fixtures against expected findings |
 | `serve` | Start an HTTP API for editor and IDE integration |
 | `version` | Print the CLI version |
@@ -192,6 +195,16 @@ cargo test --workspace
 
 The current development environment used for the initial scaffold did not have `cargo` or `rustc` available on `PATH`, so local compile verification still needs to be run from a Rust-enabled shell.
 
+## Demo
+
+The repository includes a repeatable demo script for the current offline scanner and triage flow:
+
+```bash
+./scripts/demo.sh
+```
+
+The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style markdown triage, and writes a SARIF report to `sentinel-results.sarif`.
+
 ## Build Week Plan
 
 | Sprint | Focus | Gate |
@@ -236,10 +249,10 @@ The current development environment used for the initial scaffold did not have `
 
 ### Sprint 3 - Polish and Submission
 
-- [ ] Improve error UX and configuration validation.
+- [x] Improve error UX and configuration validation.
 - [ ] Expand corpus coverage beyond handcrafted fixtures.
-- [ ] Add performance and security hardening checks.
-- [ ] Prepare demo script and recording assets.
+- [x] Add shell completion generation.
+- [x] Prepare demo script and recording assets.
 - [ ] Finalize README submission metadata.
 - [ ] Confirm all CI gates are green.
 - [ ] Submit Devpost package.

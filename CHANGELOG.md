@@ -18,3 +18,6 @@ The format is based on Keep a Changelog.
 - Sprint 2 offline triage engine with exploitability, blast radius, root cause, fix strategy, confidence, and references.
 - Fix-package templates for access control, overflow, unchecked calls, and read-only violations.
 - `sentinel-clarity scan --triage --format markdown` output.
+- Sprint 3 config validation via `sentinel-clarity init --validate --config sentinel.toml`.
+- Shell completion generation via `sentinel-clarity completions <shell>`.
+- Demo script for config validation, triage markdown, and SARIF generation.
