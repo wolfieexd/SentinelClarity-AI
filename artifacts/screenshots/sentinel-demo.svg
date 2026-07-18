@@ -39,10 +39,6 @@
       .pulse {
         animation: pulse 2.2s infinite ease-in-out;
       }
-      .badge {
-        opacity: 0;
-        animation: badge 16s infinite ease-out;
-      }
       .l1 { animation-delay: 0.8s; }
       .l2 { animation-delay: 1.8s; }
       .l3 { animation-delay: 3.0s; }
@@ -52,10 +48,6 @@
       .l7 { animation-delay: 8.6s; }
       .l8 { animation-delay: 10.0s; }
       .l9 { animation-delay: 11.4s; }
-      .b1 { animation-delay: 3.9s; }
-      .b2 { animation-delay: 5.3s; }
-      .b3 { animation-delay: 6.7s; }
-      .b4 { animation-delay: 8.1s; }
       @keyframes show {
         0%, 4% { opacity: 0; transform: translateY(8px); }
         8%, 88% { opacity: 1; transform: translateY(0); }
@@ -74,11 +66,6 @@
       @keyframes pulse {
         0%, 100% { opacity: 0.48; transform: scale(1); }
         50% { opacity: 0.9; transform: scale(1.03); }
-      }
-      @keyframes badge {
-        0%, 15% { opacity: 0; }
-        20%, 82% { opacity: 1; }
-        92%, 100% { opacity: 0; }
       }
     </style>
   </defs>
@@ -112,31 +99,11 @@
       <text class="line l5 yellow" x="38" y="258">[HIGH]     SC-ACCESS      admin mutation without owner check</text>
       <text class="line l6 yellow" x="38" y="298">[HIGH]     SC-OVERFLOW    arithmetic requires overflow review</text>
       <text class="line l7 purple" x="38" y="338">[MEDIUM]   SC-UNCHECKED   response lacks explicit handling</text>
-      <text class="line l8 cyan" x="38" y="378">AI triage: exploitability, blast radius, root cause, fix strategy</text>
-      <text class="line l9 green" x="38" y="448">Report ready: demo-output.md + sentinel-results.sarif</text>
+      <text class="line l8 cyan" x="38" y="374">AI triage: exploitability, blast radius, root cause, fix strategy</text>
+      <text class="line l9 green" x="38" y="452">Report ready: demo-output.md + sentinel-results.sarif</text>
     </g>
 
-    <rect x="38" y="408" width="1036" height="12" rx="6" fill="#1e293b"/>
-    <rect class="scan-bar" x="38" y="408" width="1036" height="12" rx="6" fill="url(#accent)"/>
-  </g>
-
-  <g transform="translate(650 48)">
-    <rect width="520" height="74" rx="28" fill="#08111f" opacity="0.68"/>
-  </g>
-  <g class="badge b1" transform="translate(674 64)">
-    <rect width="126" height="42" rx="21" fill="#0f2531" stroke="#22d3ee" stroke-opacity="0.28"/>
-    <text class="sans cyan" x="18" y="27" font-size="15" font-weight="700">SARIF</text>
-  </g>
-  <g class="badge b2" transform="translate(816 64)">
-    <rect width="126" height="42" rx="21" fill="#1f1b38" stroke="#a78bfa" stroke-opacity="0.28"/>
-    <text class="sans purple" x="18" y="27" font-size="15" font-weight="700">AI triage</text>
-  </g>
-  <g class="badge b3" transform="translate(958 64)">
-    <rect width="86" height="42" rx="21" fill="#0f2a24" stroke="#34d399" stroke-opacity="0.28"/>
-    <text class="sans green" x="18" y="27" font-size="15" font-weight="700">CI</text>
-  </g>
-  <g class="badge b4" transform="translate(1060 64)">
-    <rect width="86" height="42" rx="21" fill="#2d2614" stroke="#fbbf24" stroke-opacity="0.28"/>
-    <text class="sans yellow" x="18" y="27" font-size="15" font-weight="700">Demo</text>
+    <rect x="38" y="410" width="1036" height="10" rx="5" fill="#1e293b"/>
+    <rect class="scan-bar" x="38" y="410" width="1036" height="10" rx="5" fill="url(#accent)"/>
   </g>
 </svg>
