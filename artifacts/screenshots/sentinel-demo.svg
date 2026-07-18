@@ -41,7 +41,6 @@
       }
       .badge {
         opacity: 0;
-        transform-origin: center;
         animation: badge 16s infinite ease-out;
       }
       .l1 { animation-delay: 0.8s; }
@@ -77,9 +76,9 @@
         50% { opacity: 0.9; transform: scale(1.03); }
       }
       @keyframes badge {
-        0%, 15% { opacity: 0; transform: scale(0.92); }
-        20%, 82% { opacity: 1; transform: scale(1); }
-        92%, 100% { opacity: 0; transform: scale(0.96); }
+        0%, 15% { opacity: 0; }
+        20%, 82% { opacity: 1; }
+        92%, 100% { opacity: 0; }
       }
     </style>
   </defs>
@@ -105,20 +104,20 @@
     <circle cx="80" cy="27" r="7" fill="#34d399"/>
     <text class="mono muted" x="128" y="34" font-size="16">sentinel-clarity demo</text>
 
-    <g class="mono" font-size="22">
-      <text class="line l1" x="38" y="92"><tspan class="green">$</tspan><tspan class="text"> sentinel scan sentinel-test-corpus/contracts/demo/vulnerable-dao.clar --triage</tspan><tspan class="cursor text">▌</tspan></text>
-      <text class="line l2 muted" x="38" y="132">Loading rule registry: SC-REENTRANCY, SC-ACCESS, SC-OVERFLOW, SC-UNCHECKED, SC-READONLY</text>
+    <g class="mono" font-size="19">
+      <text class="line l1" x="38" y="92"><tspan class="green">$</tspan><tspan class="text"> sentinel scan demo/vulnerable-dao.clar --triage</tspan><tspan class="cursor text">▌</tspan></text>
+      <text class="line l2 muted" x="38" y="132">Loading rules: REENTRANCY, ACCESS, OVERFLOW, UNCHECKED, READONLY</text>
       <text class="line l3 cyan" x="38" y="172">Parsing Clarity contract and building UniversalAST...</text>
-      <text class="line l4 red" x="38" y="222">[CRITICAL] SC-REENTRANCY  external call before treasury update</text>
-      <text class="line l5 yellow" x="38" y="262">[HIGH]     SC-ACCESS      admin-like state mutation without owner check</text>
-      <text class="line l6 yellow" x="38" y="302">[HIGH]     SC-OVERFLOW    arithmetic requires checked overflow review</text>
-      <text class="line l7 purple" x="38" y="342">[MEDIUM]   SC-UNCHECKED   contract-call? response lacks explicit handling</text>
-      <text class="line l8 cyan" x="38" y="382">AI triage: exploitability, blast radius, root cause, fix strategy generated</text>
-      <text class="line l9 green" x="38" y="440">Report ready: artifacts/demo-output.md + artifacts/sentinel-results.sarif</text>
+      <text class="line l4 red" x="38" y="218">[CRITICAL] SC-REENTRANCY  external call before treasury update</text>
+      <text class="line l5 yellow" x="38" y="258">[HIGH]     SC-ACCESS      admin mutation without owner check</text>
+      <text class="line l6 yellow" x="38" y="298">[HIGH]     SC-OVERFLOW    arithmetic requires overflow review</text>
+      <text class="line l7 purple" x="38" y="338">[MEDIUM]   SC-UNCHECKED   response lacks explicit handling</text>
+      <text class="line l8 cyan" x="38" y="378">AI triage: exploitability, blast radius, root cause, fix strategy</text>
+      <text class="line l9 green" x="38" y="448">Report ready: demo-output.md + sentinel-results.sarif</text>
     </g>
 
-    <rect x="38" y="414" width="1036" height="14" rx="7" fill="#1e293b"/>
-    <rect class="scan-bar" x="38" y="414" width="1036" height="14" rx="7" fill="url(#accent)"/>
+    <rect x="38" y="408" width="1036" height="12" rx="6" fill="#1e293b"/>
+    <rect class="scan-bar" x="38" y="408" width="1036" height="12" rx="6" fill="url(#accent)"/>
   </g>
 
   <g class="badge b1" transform="translate(780 72)">
