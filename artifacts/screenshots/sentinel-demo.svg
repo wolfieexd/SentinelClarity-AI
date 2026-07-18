@@ -29,10 +29,6 @@
         opacity: 0;
         animation: show 16s infinite;
       }
-      .scan-bar {
-        transform-origin: 140px 432px;
-        animation: scan 16s infinite ease-in-out;
-      }
       .cursor {
         animation: blink 1s steps(1) infinite;
       }
@@ -52,12 +48,6 @@
         0%, 4% { opacity: 0; transform: translateY(8px); }
         8%, 88% { opacity: 1; transform: translateY(0); }
         96%, 100% { opacity: 0; transform: translateY(-4px); }
-      }
-      @keyframes scan {
-        0%, 18% { transform: scaleX(0); }
-        42% { transform: scaleX(0.54); }
-        70%, 90% { transform: scaleX(1); }
-        100% { transform: scaleX(0); }
       }
       @keyframes blink {
         0%, 49% { opacity: 1; }
@@ -100,10 +90,7 @@
       <text class="line l6 yellow" x="38" y="298">[HIGH]     SC-OVERFLOW    arithmetic requires overflow review</text>
       <text class="line l7 purple" x="38" y="338">[MEDIUM]   SC-UNCHECKED   response lacks explicit handling</text>
       <text class="line l8 cyan" x="38" y="374">AI triage: exploitability, blast radius, root cause, fix strategy</text>
-      <text class="line l9 green" x="38" y="452">Report ready: demo-output.md + sentinel-results.sarif</text>
+      <text class="line l9 green" x="38" y="430">Report ready: demo-output.md + sentinel-results.sarif</text>
     </g>
-
-    <rect x="38" y="410" width="1036" height="10" rx="5" fill="#1e293b"/>
-    <rect class="scan-bar" x="38" y="410" width="1036" height="10" rx="5" fill="url(#accent)"/>
   </g>
 </svg>
