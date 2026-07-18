@@ -21,7 +21,7 @@ jobs:
       - name: Run SentinelClarity
         run: ./target/release/sentinel-clarity scan . --format sarif --output sentinel-results.sarif
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: sentinel-results.sarif
       - name: Comment summary
