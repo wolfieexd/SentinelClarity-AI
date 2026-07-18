@@ -310,14 +310,14 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Improve error UX and configuration validation.
 - [x] Add demo DAO vulnerable and fixed contract pair.
 - [x] Add sample demo report, SARIF, and mock PR fix plan artifacts.
-- [ ] Expand corpus coverage beyond handcrafted fixtures.
+- [x] Expand corpus coverage beyond handcrafted fixtures.
 - [x] Add shell completion generation.
 - [x] Prepare demo script and recording assets.
 - [x] Finalize README judge quickstart and demo flow.
 - [x] Add Devpost-ready `SUBMISSION.md`.
 - [x] Add architecture diagrams.
 - [x] Add release binary workflow.
-- [ ] Confirm all CI gates are green.
+- [x] Confirm all CI gates are green.
 - [ ] Submit Devpost package.
 
 ## OpenAI Build Week 2026

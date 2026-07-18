@@ -68,6 +68,30 @@ mod tests {
         }
     }
 
+    #[test]
+    fn regression_marketplace_escrow_emits_expected_findings() {
+        let scanner = Scanner::new(ClarityAdapter, default_registry());
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join(super::CORPUS_ROOT)
+            .join("regression")
+            .join("marketplace-escrow.clar");
+        let source = fs::read_to_string(path).expect("regression fixture is readable");
+        let findings = scanner
+            .scan_findings(&source)
+            .expect("regression fixture parses");
+        let rule_ids = findings
+            .into_iter()
+            .map(|finding| finding.rule_id)
+            .collect::<BTreeSet<_>>();
+
+        for expected in ["SC-ACCESS", "SC-OVERFLOW", "SC-REENTRANCY", "SC-READONLY"] {
+            assert!(
+                rule_ids.contains(expected),
+                "missing finding for {expected}"
+            );
+        }
+    }
+
     fn vulnerable_contracts() -> Vec<PathBuf> {
         let corpus_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join(super::CORPUS_ROOT)

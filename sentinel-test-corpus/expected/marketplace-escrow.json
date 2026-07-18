@@ -1,0 +1,10 @@
+{
+  "contract": "regression/marketplace-escrow.clar",
+  "expected_findings": [
+    "SC-ACCESS",
+    "SC-OVERFLOW",
+    "SC-REENTRANCY",
+    "SC-READONLY"
+  ],
+  "coverage_goal": "Regression fixture covering marketplace-style fee mutation, arithmetic, external oracle calls before accounting updates, and read-only cache mutation outside the handcrafted corpus."
+}
