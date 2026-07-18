@@ -10,6 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
+use std::process::Command as ProcessCommand;
 use std::time::Duration;
 use walkdir::WalkDir;
 
@@ -42,6 +43,11 @@ enum Command {
         fail_on: Option<FailSeverity>,
         #[arg(long)]
         triage: bool,
+        #[arg(
+            long,
+            help = "Validate each contract with the installed Clarinet toolchain"
+        )]
+        clarinet: bool,
     },
     Serve {
         #[arg(long, default_value_t = 8080)]
@@ -150,12 +156,13 @@ fn main() -> Result<()> {
             config,
             fail_on,
             triage,
+            clarinet,
         } => {
             let policy = load_scan_policy(config.as_deref())?;
             let fail_on = fail_on
                 .map(FailSeverity::as_severity)
                 .unwrap_or(policy.fail_on);
-            let scan_results = scan_path(&path, &policy)?;
+            let scan_results = scan_path(&path, &policy, clarinet)?;
             let findings = scan_results
                 .iter()
                 .flat_map(|result| result.findings.clone())
@@ -312,7 +319,7 @@ fn scanner_with_policy(policy: &ScanPolicy) -> Scanner<ClarityAdapter> {
     Scanner::new(ClarityAdapter, registry)
 }
 
-fn scan_path(path: &Path, policy: &ScanPolicy) -> Result<Vec<FileScanResult>> {
+fn scan_path(path: &Path, policy: &ScanPolicy, use_clarinet: bool) -> Result<Vec<FileScanResult>> {
     let scanner = scanner_with_policy(policy);
     let mut results = Vec::new();
 
@@ -326,6 +333,9 @@ fn scan_path(path: &Path, policy: &ScanPolicy) -> Result<Vec<FileScanResult>> {
                 metadata.len(),
                 MAX_SCAN_FILE_BYTES
             );
+        }
+        if use_clarinet {
+            clarinet_check(&file)?;
         }
         let source = std::fs::read_to_string(&file)
             .with_context(|| format!("failed to read {}", file.display()))?;
@@ -344,6 +354,32 @@ fn scan_path(path: &Path, policy: &ScanPolicy) -> Result<Vec<FileScanResult>> {
     }
 
     Ok(results)
+}
+
+fn clarinet_check(file: &Path) -> Result<()> {
+    let output = ProcessCommand::new("clarinet")
+        .arg("check")
+        .arg(file)
+        .output()
+        .context("failed to launch Clarinet; install it or omit `--clarinet`")?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let diagnostics = if stderr.trim().is_empty() {
+        stdout.trim()
+    } else {
+        stderr.trim()
+    };
+    let detail = if diagnostics.is_empty() {
+        "Clarinet returned a non-zero status without diagnostics".to_string()
+    } else {
+        diagnostics.chars().take(4_096).collect()
+    };
+    anyhow::bail!("Clarinet rejected {}: {detail}", file.display());
 }
 
 fn serve(port: u16) -> Result<()> {
@@ -638,8 +674,8 @@ fn test_corpus(all: bool, rule: Option<&str>) -> Result<String> {
 
 fn verify_fix(before: &Path, after: &Path, clears: &[String]) -> Result<String> {
     let policy = ScanPolicy::default();
-    let before_results = scan_path(before, &policy)?;
-    let after_results = scan_path(after, &policy)?;
+    let before_results = scan_path(before, &policy, false)?;
+    let after_results = scan_path(after, &policy, false)?;
     let before_rules = collect_rule_ids(&before_results);
     let after_rules = collect_rule_ids(&after_results);
     let rules_to_check = if clears.is_empty() {

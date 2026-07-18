@@ -100,6 +100,7 @@ The CLI binary is named `sentinel-clarity`.
 cargo run --package sentinel-cli -- scan . --format sarif
 cargo run --package sentinel-cli -- scan ./contracts --format markdown
 cargo run --package sentinel-cli -- scan ./contracts --format markdown --triage
+cargo run --package sentinel-cli -- scan ./contracts --clarinet --format markdown
 cargo run --package sentinel-cli -- init
 cargo run --package sentinel-cli -- init --validate --config sentinel.toml
 cargo run --package sentinel-cli -- completions powershell
@@ -139,6 +140,8 @@ Planned production commands:
 | `verify-fix` | Compare vulnerable and fixed contracts and assert selected findings are cleared |
 | `serve` | Start a minimal local HTTP API with `/health`, `/version`, and `POST /scan` |
 | `version` | Print the CLI version |
+
+Pass `--clarinet` to `scan` when the official Clarinet toolchain is installed. SentinelClarity then requires each contract to pass `clarinet check` before producing its own findings. The integration uses direct process arguments (never a shell) and limits compiler diagnostics in errors.
 
 ## Configuration
 
@@ -335,6 +338,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | `docs/demo-script.md` | 60-second judge walkthrough |
 | `docs/security-testing.md` | Security testing workflow and coverage |
 | `docs/threat-model.md` | Assets, adversaries, covered risks, and out-of-scope threats |
+| `docs/audit-roadmap.md` | Evidence-driven path from scanner to audit-grade platform |
 | `docs/adr/0001-architecture.md` | Architecture decision record |
 | `docs/rules/` | Security rule catalog |
 
@@ -357,6 +361,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 4 | Production hardening | Security workflow, corpus runner, fix verification, health API |
 | Sprint 5 | Security fortress | Bounded inputs, fail-closed scanning, dependency audit, CodeQL, disclosure policy |
 | Sprint 6 | Production core | Enforced policies, syntax validation, false-positive resistance, locked builds |
+| Sprint 7 | Audit readiness | Clarinet validation bridge, audit evidence roadmap |
 
 ## Future Production Hardening
 
@@ -444,6 +449,14 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Cap recursive scan file counts and keep scan order deterministic.
 - [x] Harden GitHub Action input handling with environment-bound values.
 - [x] Require locked dependency resolution for CI and release builds.
+
+### Sprint 7 - Audit Readiness
+
+- [x] Add optional Clarinet toolchain validation before scanning.
+- [x] Keep compiler invocation shell-free and diagnostic output bounded.
+- [x] Define evidence-driven milestones for semantic analysis, invariants, and audit reports.
+- [ ] Add Clarinet Simnet invariant and adversarial property-test harness.
+- [ ] Add compiler-backed semantic call, storage, and authority graph.
 
 ## OpenAI Build Week 2026
 

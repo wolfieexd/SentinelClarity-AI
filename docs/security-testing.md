@@ -32,6 +32,7 @@ The local `serve` API is deliberately constrained to reduce its attack surface:
 - Rule enablement and severity overrides are applied by the registry itself, so SARIF, markdown, JSON, fix verification, and exit status share the same security policy.
 - The Clarity adapter rejects unbalanced parentheses and unterminated strings before rule execution.
 - Rule matching uses sanitized code, preventing comments and string literals from fabricating apparent dangerous operations.
+- `scan --clarinet` optionally invokes the installed Clarinet compiler with direct process arguments, requiring its syntax validation before SentinelClarity analysis proceeds.
 
 ## Local Command
 
