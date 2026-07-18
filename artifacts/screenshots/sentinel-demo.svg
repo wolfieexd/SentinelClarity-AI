@@ -89,13 +89,14 @@
   <circle class="pulse" cx="180" cy="610" r="260" fill="#8b5cf6" opacity="0.10"/>
   <path d="M0 96 C250 42 380 152 620 92 C845 36 1004 78 1280 28 L1280 0 L0 0 Z" fill="#ffffff" opacity="0.035"/>
 
-  <g transform="translate(84 70)">
-    <text class="sans text" x="0" y="0" font-size="42" font-weight="800">SentinelClarity</text>
-    <text class="sans muted" x="0" y="38" font-size="20">AI Security Engineer for Clarity smart contracts</text>
-    <rect x="0" y="62" width="304" height="5" rx="2.5" fill="url(#accent)"/>
+  <g transform="translate(60 28)">
+    <rect x="0" y="0" width="560" height="124" rx="24" fill="#08111f" opacity="0.78"/>
+    <text class="sans text" x="24" y="48" font-size="36" font-weight="800">SentinelClarity</text>
+    <text class="sans muted" x="24" y="82" font-size="17">AI Security Engineer for Clarity smart contracts</text>
+    <rect x="24" y="102" width="286" height="5" rx="2.5" fill="url(#accent)"/>
   </g>
 
-  <g filter="url(#shadow)" transform="translate(84 155)">
+  <g filter="url(#shadow)" transform="translate(84 178)">
     <rect width="1112" height="465" rx="22" fill="#0b1020" stroke="#334155" stroke-width="1.5"/>
     <rect width="1112" height="54" rx="22" fill="#111827"/>
     <path d="M0 32 Q0 0 32 0 H1080 Q1112 0 1112 32 V54 H0 Z" fill="#111827"/>
@@ -120,11 +121,11 @@
     <rect class="scan-bar" x="38" y="414" width="1036" height="14" rx="7" fill="url(#accent)"/>
   </g>
 
-  <g class="badge b1" transform="translate(780 88)">
+  <g class="badge b1" transform="translate(780 72)">
     <rect width="155" height="42" rx="21" fill="#2dd4bf" opacity="0.16" stroke="#2dd4bf"/>
     <text class="sans cyan" x="20" y="27" font-size="16" font-weight="700">SARIF output</text>
   </g>
-  <g class="badge b2" transform="translate(952 88)">
+  <g class="badge b2" transform="translate(952 72)">
     <rect width="154" height="42" rx="21" fill="#a78bfa" opacity="0.16" stroke="#a78bfa"/>
     <text class="sans purple" x="20" y="27" font-size="16" font-weight="700">AI triage</text>
   </g>

@@ -6,6 +6,8 @@
 [![SARIF](https://img.shields.io/badge/SARIF-2.1.0-2563eb.svg)](artifacts/sentinel-results.sarif)
 [![OpenAI Build Week 2026](https://img.shields.io/badge/OpenAI%20Build%20Week-Developer%20Tools-111827)](https://github.com/wolfieexd/SentinelClarity-AI)
 
+![SentinelClarity animated terminal demo](artifacts/screenshots/sentinel-demo.svg)
+
 SentinelClarity is an AI-native security engineering platform for Clarity smart contracts. It is designed to scan Bitcoin-layer smart contract repositories continuously, explain findings with senior-auditor context, and prepare minimal fixes that can be reviewed and merged through a GitHub-native workflow.
 
 The project starts with Clarity and Stacks, but the core architecture is intentionally language-agnostic: parsers convert source code into a shared Universal AST, security rules run against that representation, and downstream outputs can flow into SARIF, markdown reports, AI triage, and pull request automation.
@@ -219,8 +221,6 @@ cargo test --workspace
 The current development environment used for the initial scaffold did not have `cargo` or `rustc` available on `PATH`, so local compile verification still needs to be run from a Rust-enabled shell.
 
 ## Demo
-
-![SentinelClarity animated terminal demo](artifacts/screenshots/sentinel-demo.svg)
 
 The repository includes a repeatable demo script for the current offline scanner and triage flow:
 
