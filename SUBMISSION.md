@@ -91,4 +91,4 @@ cargo run --package sentinel-cli -- scan sentinel-test-corpus/contracts/demo/vul
 - Repository: https://github.com/wolfieexd/SentinelClarity-AI
 - Track: Developer Tools
 - License: MIT
-- Demo video: TBD
+- Demo video: Add during Devpost submission

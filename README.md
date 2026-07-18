@@ -400,8 +400,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - Project: SentinelClarity
 - Repository: `https://github.com/wolfieexd/SentinelClarity-AI`
 - License: MIT
-- Demo video: TBD
-- Codex session log: `SESSIONS.md`
+- Demo video: Add during Devpost submission
 - Submission deadline: July 21, 2026 at 5:00 PM PT
 
 ## Topics

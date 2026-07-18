@@ -1,1 +1,29 @@
 /target/
+
+# Local environment and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local editor and OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local Codex/automation scratch files
+.codex/
+codex-clipboard-*.png
+*.local.*
+
+# Runtime logs and temporary output
+*.log
+tmp/
+temp/
