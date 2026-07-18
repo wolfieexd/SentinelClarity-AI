@@ -22,3 +22,4 @@ The format is based on Keep a Changelog.
 - Shell completion generation via `sentinel-clarity completions <shell>`.
 - Demo script for config validation, triage markdown, and SARIF generation.
 - Demo DAO vulnerable/fixed contract pair with sample triage report, SARIF, and mock fix-plan artifacts.
+- Devpost-ready submission writeup, architecture diagrams, screenshot placeholders, judge demo script, and release workflow.

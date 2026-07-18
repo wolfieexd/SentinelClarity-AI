@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/wolfieexd/SentinelClarity-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/wolfieexd/SentinelClarity-AI/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-2021-orange.svg)](Cargo.toml)
+[![SARIF](https://img.shields.io/badge/SARIF-2.1.0-2563eb.svg)](artifacts/sentinel-results.sarif)
 [![OpenAI Build Week 2026](https://img.shields.io/badge/OpenAI%20Build%20Week-Developer%20Tools-111827)](https://github.com/wolfieexd/SentinelClarity-AI)
 
 SentinelClarity is an AI-native security engineering platform for Clarity smart contracts. It is designed to scan Bitcoin-layer smart contract repositories continuously, explain findings with senior-auditor context, and prepare minimal fixes that can be reviewed and merged through a GitHub-native workflow.
@@ -49,6 +51,7 @@ sentinel-clarity/
 |-- sentinel-action/       # GitHub Action wrapper metadata
 |-- sentinel-test-corpus/  # Contract corpus and expected finding fixtures
 |-- docs/                  # ADRs and rule documentation
+|-- artifacts/             # Demo reports, SARIF, screenshots, and fix plans
 `-- sentinel.toml          # Default scanner configuration
 ```
 
@@ -105,12 +108,18 @@ Run the full demo flow in under two minutes:
 ```bash
 git clone https://github.com/wolfieexd/SentinelClarity-AI.git
 cd SentinelClarity-AI
+./scripts/judge-demo.sh
+```
+
+The demo target is `sentinel-test-corpus/contracts/demo/vulnerable-dao.clar`, a deliberately vulnerable DAO treasury contract with access-control, arithmetic, unchecked-call, reentrancy, and read-only mutation findings.
+
+Manual equivalent:
+
+```bash
 cargo test --workspace
 cargo run --package sentinel-cli -- init --validate --config sentinel.toml
 cargo run --package sentinel-cli -- scan sentinel-test-corpus/contracts/demo/vulnerable-dao.clar --format markdown --triage --fail-on critical
 ```
-
-The demo target is `sentinel-test-corpus/contracts/demo/vulnerable-dao.clar`, a deliberately vulnerable DAO treasury contract with access-control, arithmetic, unchecked-call, reentrancy, and read-only mutation findings.
 
 Planned production commands:
 
@@ -214,7 +223,7 @@ The current development environment used for the initial scaffold did not have `
 The repository includes a repeatable demo script for the current offline scanner and triage flow:
 
 ```bash
-./scripts/demo.sh
+./scripts/judge-demo.sh
 ```
 
 The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style markdown triage, and writes a SARIF report to `sentinel-results.sarif`.
@@ -235,6 +244,16 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | `artifacts/demo-output.md` | Sample AI triage report for the vulnerable DAO |
 | `artifacts/fix-plan.md` | Mock remediation PR body |
 | `artifacts/sentinel-results.sarif` | Sample SARIF 2.1.0 output with source locations |
+| `artifacts/screenshots/README.md` | Screenshot capture checklist for README and Devpost |
+
+## Project Docs
+
+| Document | Purpose |
+| --- | --- |
+| `SUBMISSION.md` | Devpost-ready project narrative |
+| `docs/architecture.md` | Mermaid architecture diagrams and implementation boundaries |
+| `docs/adr/0001-architecture.md` | Architecture decision record |
+| `docs/rules/` | Security rule catalog |
 
 ## What Makes This AI-Native
 
@@ -295,6 +314,9 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add shell completion generation.
 - [x] Prepare demo script and recording assets.
 - [x] Finalize README judge quickstart and demo flow.
+- [x] Add Devpost-ready `SUBMISSION.md`.
+- [x] Add architecture diagrams.
+- [x] Add release binary workflow.
 - [ ] Confirm all CI gates are green.
 - [ ] Submit Devpost package.
 
@@ -307,6 +329,10 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - Demo video: TBD
 - Codex session log: `SESSIONS.md`
 - Submission deadline: July 21, 2026 at 5:00 PM PT
+
+## Topics
+
+`clarity` `stacks` `smart-contract-security` `sarif` `rust` `ai-security` `developer-tools` `openai-build-week`
 
 ## License
 

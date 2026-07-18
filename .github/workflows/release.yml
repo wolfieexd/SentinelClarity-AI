@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build release binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: sentinel-clarity-linux-x86_64
+            binary: target/release/sentinel-clarity
+          - os: macos-latest
+            artifact: sentinel-clarity-macos-x86_64
+            binary: target/release/sentinel-clarity
+          - os: windows-latest
+            artifact: sentinel-clarity-windows-x86_64.exe
+            binary: target/release/sentinel-clarity.exe
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release --package sentinel-cli
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
