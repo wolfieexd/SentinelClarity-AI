@@ -27,7 +27,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository is in Sprint 4 hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
+This repository has completed Sprint 5 security hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, six heuristic security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and demo script are in place. The scanner and local API now enforce bounded input handling and fail closed on unreadable paths; CI adds dependency advisory auditing, CodeQL analysis, and Dependabot maintenance. Full parser-backed type analysis, live OpenAI API integration, mainnet corpus expansion, and PR automation remain future production work.
 
 | Area | Status |
 | --- | --- |
@@ -40,7 +40,7 @@ This repository is in Sprint 4 hardening of the OpenAI Build Week implementation
 | GitHub Action | Local composite action with configurable path, config, format, and fail threshold |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
-| Security validation | Secret scan plus smart-contract security regression workflow |
+| Security validation | Secret scan, dependency audit, CodeQL, bounded local API, and smart-contract security regressions |
 
 For a precise capability matrix, see `PROJECT_STATUS.md`.
 
@@ -266,7 +266,9 @@ SentinelClarity is a polished hackathon MVP, not a complete audit replacement.
 SentinelClarity includes a dedicated security validation layer:
 
 - `scripts/security-check.sh` scans tracked files for high-risk secret patterns.
-- `.github/workflows/security.yml` runs secret scanning and smart-contract security regressions in CI.
+- `.github/workflows/security.yml` runs secret scanning, dependency advisory checks, and smart-contract security regressions in CI.
+- `.github/workflows/codeql.yml` analyzes Rust code on pushes, pull requests, and a weekly schedule.
+- The local API is loopback-only, has a five-second I/O timeout, accepts only bounded UTF-8 requests, rejects ambiguous HTTP framing, and returns JSON-escaped errors.
 - `sentinel-test-corpus` verifies that vulnerable fixtures trigger expected findings and fixed fixtures clear targeted security risks.
 - `docs/security-testing.md` documents what is covered and what remains future hardening work.
 
@@ -351,6 +353,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 2 | GPT triage, Codex fix generation, PR bot | Offline triage, fix templates, CLI output |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
 | Sprint 4 | Production hardening | Security workflow, corpus runner, fix verification, health API |
+| Sprint 5 | Security fortress | Bounded inputs, fail-closed scanning, dependency audit, CodeQL, disclosure policy |
 
 ## Future Production Hardening
 
@@ -417,6 +420,17 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add `POST /scan` local API endpoint.
 - [x] Add GitHub Action `path` input.
 - [x] Keep CI and Security workflows green.
+
+### Sprint 5 - Security Fortress
+
+- [x] Fail closed when filesystem traversal encounters an unreadable path.
+- [x] Enforce scanner file-size and HTTP request-size limits.
+- [x] Bind the local API to loopback and enforce I/O timeouts.
+- [x] Reject malformed, ambiguous, oversized, and non-UTF-8 API requests.
+- [x] Add secure HTTP response headers and JSON-escaped errors.
+- [x] Add dependency advisory auditing and weekly Dependabot updates.
+- [x] Add scheduled CodeQL analysis for the Rust workspace.
+- [x] Add a responsible disclosure policy in `SECURITY.md`.
 
 ## OpenAI Build Week 2026
 

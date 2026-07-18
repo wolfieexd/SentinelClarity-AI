@@ -6,10 +6,16 @@ use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
 use sentinel_engine::{default_registry, Scanner};
 use std::collections::{BTreeMap, BTreeSet};
-use std::io::{Read, Write};
+use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use walkdir::WalkDir;
+
+const MAX_SCAN_FILE_BYTES: u64 = 2 * 1024 * 1024;
+const MAX_HTTP_HEADER_BYTES: usize = 16 * 1024;
+const MAX_HTTP_BODY_BYTES: usize = 512 * 1024;
+const HTTP_READ_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Parser)]
 #[command(name = "sentinel-clarity")]
@@ -174,6 +180,16 @@ fn scan_path(path: &Path) -> Result<Vec<FileScanResult>> {
     let mut results = Vec::new();
 
     for file in clarity_files(path)? {
+        let metadata = std::fs::metadata(&file)
+            .with_context(|| format!("failed to inspect {}", file.display()))?;
+        if metadata.len() > MAX_SCAN_FILE_BYTES {
+            anyhow::bail!(
+                "refusing to scan {}: file is {} bytes, exceeding the {} byte limit",
+                file.display(),
+                metadata.len(),
+                MAX_SCAN_FILE_BYTES
+            );
+        }
         let source = std::fs::read_to_string(&file)
             .with_context(|| format!("failed to read {}", file.display()))?;
         let mut findings = scanner
@@ -208,56 +224,210 @@ fn serve(port: u16) -> Result<()> {
 }
 
 fn handle_connection(mut stream: TcpStream) -> Result<()> {
-    let mut buffer = [0; 65536];
-    let bytes_read = stream.read(&mut buffer)?;
-    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
-    let (method, path) = request_line_parts(&request);
-    let request_body = request
-        .split_once("\r\n\r\n")
-        .map(|(_, body)| body)
-        .unwrap_or_default();
+    stream.set_read_timeout(Some(HTTP_READ_TIMEOUT))?;
+    stream.set_write_timeout(Some(HTTP_READ_TIMEOUT))?;
 
-    let (status, body) = match (method, path) {
+    let request = match read_http_request(&mut stream) {
+        Ok(request) => request,
+        Err(_) => {
+            write_http_response(
+                &mut stream,
+                "400 Bad Request",
+                &json_error("invalid HTTP request"),
+                None,
+            )?;
+            return Ok(());
+        }
+    };
+
+    let (status, body, extra_headers) = match (request.method.as_str(), request.path.as_str()) {
         ("GET", "/health") => (
             "200 OK",
             r#"{"status":"ok","service":"sentinel-clarity"}"#.to_string(),
+            None,
         ),
         ("GET", "/version") => (
             "200 OK",
             format!(r#"{{"version":"{}"}}"#, env!("CARGO_PKG_VERSION")),
+            None,
         ),
-        ("POST", "/scan") => scan_http_body(request_body),
+        ("POST", "/scan") => {
+            let (status, body) = scan_http_body(&request.body);
+            (status, body, None)
+        }
+        ("GET", "/scan") | ("POST", "/health") | ("POST", "/version") => (
+            "405 Method Not Allowed",
+            json_error("method not allowed"),
+            Some("Allow: GET, POST\r\n"),
+        ),
         _ => (
             "404 Not Found",
             r#"{"error":"not found","endpoints":["GET /health","GET /version","POST /scan"]}"#
                 .to_string(),
+            None,
         ),
     };
 
+    write_http_response(&mut stream, status, &body, extra_headers)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct HttpRequest {
+    method: String,
+    path: String,
+    body: Vec<u8>,
+}
+
+fn read_http_request(stream: &mut TcpStream) -> Result<HttpRequest> {
+    let mut request = Vec::with_capacity(4096);
+    let mut chunk = [0_u8; 4096];
+    let header_end = loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => anyhow::bail!("connection closed before request headers were complete"),
+            Ok(bytes_read) => {
+                request.extend_from_slice(&chunk[..bytes_read]);
+                if request.len() > MAX_HTTP_HEADER_BYTES + MAX_HTTP_BODY_BYTES {
+                    anyhow::bail!("request exceeds the {} byte limit", MAX_HTTP_BODY_BYTES);
+                }
+                if let Some(header_end) = find_header_end(&request) {
+                    break header_end;
+                }
+                if request.len() > MAX_HTTP_HEADER_BYTES {
+                    anyhow::bail!(
+                        "request headers exceed the {} byte limit",
+                        MAX_HTTP_HEADER_BYTES
+                    );
+                }
+            }
+            Err(error)
+                if error.kind() == ErrorKind::WouldBlock || error.kind() == ErrorKind::TimedOut =>
+            {
+                anyhow::bail!("request timed out")
+            }
+            Err(error) => return Err(error.into()),
+        }
+    };
+
+    let header_text = std::str::from_utf8(&request[..header_end])
+        .context("request headers must be valid UTF-8")?;
+    let (method, path, content_length) = parse_http_headers(header_text)?;
+    if content_length > MAX_HTTP_BODY_BYTES {
+        anyhow::bail!(
+            "request body exceeds the {} byte limit",
+            MAX_HTTP_BODY_BYTES
+        );
+    }
+
+    let expected_length = header_end + content_length;
+    if request.len() > expected_length {
+        anyhow::bail!("request contains data beyond its declared Content-Length")
+    }
+    while request.len() < expected_length {
+        let bytes_read = match stream.read(&mut chunk) {
+            Ok(0) => anyhow::bail!("connection closed before request body was complete"),
+            Ok(bytes_read) => bytes_read,
+            Err(error)
+                if error.kind() == ErrorKind::WouldBlock || error.kind() == ErrorKind::TimedOut =>
+            {
+                anyhow::bail!("request timed out")
+            }
+            Err(error) => return Err(error.into()),
+        };
+        request.extend_from_slice(&chunk[..bytes_read]);
+        if request.len() > expected_length {
+            anyhow::bail!("request contains data beyond its declared Content-Length")
+        }
+    }
+
+    Ok(HttpRequest {
+        method,
+        path,
+        body: request[header_end..].to_vec(),
+    })
+}
+
+fn find_header_end(request: &[u8]) -> Option<usize> {
+    request
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .map(|position| position + 4)
+}
+
+fn parse_http_headers(headers: &str) -> Result<(String, String, usize)> {
+    let mut lines = headers.split("\r\n");
+    let request_line = lines.next().context("missing request line")?;
+    let mut request_parts = request_line.split_whitespace();
+    let method = request_parts.next().context("missing HTTP method")?;
+    let path = request_parts.next().context("missing request path")?;
+    let version = request_parts.next().context("missing HTTP version")?;
+    if request_parts.next().is_some() || !matches!(version, "HTTP/1.0" | "HTTP/1.1") {
+        anyhow::bail!("malformed HTTP request line")
+    }
+    if !matches!(method, "GET" | "POST") || !path.starts_with('/') || path.contains('?') {
+        anyhow::bail!("unsupported HTTP method or path")
+    }
+
+    let mut content_length = None;
+    for line in lines.filter(|line| !line.is_empty()) {
+        let (name, value) = line.split_once(':').context("malformed HTTP header")?;
+        if name.eq_ignore_ascii_case("transfer-encoding")
+            && !value.trim().eq_ignore_ascii_case("identity")
+        {
+            anyhow::bail!("Transfer-Encoding is not supported")
+        }
+        if name.eq_ignore_ascii_case("content-length") {
+            if content_length.is_some() {
+                anyhow::bail!("multiple Content-Length headers are not allowed")
+            }
+            content_length = Some(
+                value
+                    .trim()
+                    .parse::<usize>()
+                    .context("invalid Content-Length header")?,
+            );
+        }
+    }
+
+    Ok((
+        method.to_string(),
+        path.to_string(),
+        content_length.unwrap_or(0),
+    ))
+}
+
+fn write_http_response(
+    stream: &mut TcpStream,
+    status: &str,
+    body: &str,
+    extra_headers: Option<&str>,
+) -> Result<()> {
+    let extra_headers = extra_headers.unwrap_or_default();
     let response = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        "HTTP/1.1 {status}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n{extra_headers}\r\n{body}",
         body.len()
     );
     stream.write_all(response.as_bytes())?;
     Ok(())
 }
 
-fn request_line_parts(request: &str) -> (&str, &str) {
-    let mut parts = request
-        .lines()
-        .next()
-        .unwrap_or_default()
-        .split_whitespace();
-    let method = parts.next().unwrap_or_default();
-    let path = parts.next().unwrap_or("/");
-    (method, path)
+fn json_error(message: &str) -> String {
+    serde_json::json!({ "error": message }).to_string()
 }
 
-fn scan_http_body(source: &str) -> (&'static str, String) {
+fn scan_http_body(body: &[u8]) -> (&'static str, String) {
+    let source = match std::str::from_utf8(body) {
+        Ok(source) => source,
+        Err(_) => {
+            return (
+                "400 Bad Request",
+                json_error("request body must be UTF-8 Clarity source"),
+            )
+        }
+    };
     if source.trim().is_empty() {
         return (
             "400 Bad Request",
-            r#"{"error":"POST /scan requires raw Clarity source in the request body"}"#.to_string(),
+            json_error("POST /scan requires raw Clarity source in the request body"),
         );
     }
 
@@ -268,12 +438,12 @@ fn scan_http_body(source: &str) -> (&'static str, String) {
             (
                 "200 OK",
                 serde_json::to_string(&report)
-                    .unwrap_or_else(|error| format!(r#"{{"error":"{error}"}}"#)),
+                    .unwrap_or_else(|_| json_error("failed to serialize scan result")),
             )
         }
-        Err(error) => (
+        Err(_) => (
             "422 Unprocessable Entity",
-            format!(r#"{{"error":"failed to parse source","detail":"{error}"}}"#),
+            json_error("failed to parse source"),
         ),
     }
 }
@@ -420,13 +590,16 @@ fn clarity_files(path: &Path) -> Result<Vec<PathBuf>> {
         );
     }
 
-    let files = WalkDir::new(path)
+    let mut files = WalkDir::new(path)
         .into_iter()
-        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.context("failed while walking scan path"))
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
         .filter(|entry| entry.file_type().is_file())
         .map(|entry| entry.into_path())
         .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("clar"))
-        .collect();
+        .collect::<Vec<_>>();
+    files.sort();
 
     Ok(files)
 }
@@ -655,16 +828,33 @@ mod tests {
     }
 
     #[test]
-    fn request_line_parts_extract_method_and_path() {
-        let (method, path) = request_line_parts("POST /scan HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    fn parses_safe_http_headers() {
+        let (method, path, content_length) = parse_http_headers(
+            "POST /scan HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\n",
+        )
+        .expect("request should parse");
         assert_eq!(method, "POST");
         assert_eq!(path, "/scan");
+        assert_eq!(content_length, 4);
+    }
+
+    #[test]
+    fn rejects_ambiguous_or_unsupported_http_headers() {
+        assert!(parse_http_headers(
+            "POST /scan HTTP/1.1\r\nContent-Length: 1\r\nContent-Length: 1\r\n\r\n"
+        )
+        .is_err());
+        assert!(
+            parse_http_headers("POST /scan HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n")
+                .is_err()
+        );
+        assert!(parse_http_headers("POST /scan?mode=fast HTTP/1.1\r\n\r\n").is_err());
     }
 
     #[test]
     fn scan_http_body_returns_sarif_json() {
         let (status, body) = scan_http_body(
-            "(define-public (pay) (contract-call? .token transfer u1 tx-sender contract-caller))",
+            b"(define-public (pay) (contract-call? .token transfer u1 tx-sender contract-caller))",
         );
 
         assert_eq!(status, "200 OK");
@@ -673,9 +863,17 @@ mod tests {
 
     #[test]
     fn scan_http_body_rejects_empty_body() {
-        let (status, body) = scan_http_body("");
+        let (status, body) = scan_http_body(b"");
 
         assert_eq!(status, "400 Bad Request");
         assert!(body.contains("requires raw Clarity source"));
+    }
+
+    #[test]
+    fn scan_http_body_rejects_non_utf8_source() {
+        let (status, body) = scan_http_body(&[0xff]);
+
+        assert_eq!(status, "400 Bad Request");
+        assert!(body.contains("UTF-8"));
     }
 }

@@ -14,7 +14,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI-style triage | Working offline | Deterministic triage produces exploitability, blast radius, root cause, confidence, and fix strategy. |
 | Fix planning | Working offline | Generates reviewable fix-package text for supported findings. |
 | Demo flow | Working | `scripts/judge-demo.sh` validates config, scans the demo DAO, and writes artifacts. |
-| Security checks | Working | Dedicated workflow runs secret scanning and smart-contract security regressions. |
+| Security checks | Working | Secret scanning, dependency advisory auditing, CodeQL, and smart-contract security regressions run in CI. |
 | CI | Working | Format, Clippy, tests, release build, and artifacts run in GitHub Actions. |
 | Release workflow | Ready | Tag/manual workflow builds platform binaries. |
 
@@ -27,7 +27,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI integration | Offline `TriageClient` implementation | Live OpenAI-backed triage with structured responses and policy controls. |
 | PR automation | Fix-package templates and mock PR plan | Real GitHub PR creation with patch application and re-scan verification. |
 | Corpus | Handcrafted, demo, and regression fixtures | Mainnet-scale labeled corpus and fuzzed edge cases. |
-| HTTP server | Minimal `/health`, `/version`, and `POST /scan` endpoints | Richer production API for IDE/editor integrations. |
+| HTTP server | Loopback-only `/health`, `/version`, and bounded `POST /scan` endpoint | Authenticated, rate-limited editor/API integrations. |
 
 ## Judge-Ready Claim
 

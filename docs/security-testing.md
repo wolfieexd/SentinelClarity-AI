@@ -9,8 +9,21 @@ The `Security` workflow runs on every push to `main` and every pull request.
 | Check | Purpose |
 | --- | --- |
 | Secret pattern scan | Fails if tracked files contain high-risk patterns such as private keys, GitHub tokens, OpenAI keys, AWS access keys, or password-like fields. |
+| Dependency advisory audit | Checks `Cargo.lock` against the RustSec advisory database. |
+| CodeQL | Runs scheduled and pull-request static analysis of the Rust workspace. |
 | Smart-contract security regressions | Runs targeted Clarity corpus tests that verify vulnerable fixtures emit expected findings and fixed fixtures clear targeted risks. |
 | Fix verification | The CLI can compare before/after contracts and fail if selected risks remain. |
+
+## Runtime Boundary Tests
+
+The local `serve` API is deliberately constrained to reduce its attack surface:
+
+- It binds only to `127.0.0.1`, not to external network interfaces.
+- It enforces a five-second read/write timeout.
+- It caps headers at 16 KiB, request bodies at 512 KiB, and scanned files at 2 MiB.
+- It accepts only `GET /health`, `GET /version`, and `POST /scan` with raw UTF-8 Clarity source.
+- It rejects duplicate `Content-Length`, transfer encodings, incomplete bodies, unsupported query strings, and invalid UTF-8.
+- Error responses are JSON-escaped and include `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 
 ## Local Command
 
@@ -40,3 +53,4 @@ Additional regression tests verify that fixed handcrafted fixtures clear targete
 - Mainnet-scale labeled corpus evaluation
 - Live OpenAI API integration testing
 - Automated PR remediation security review
+- Authenticated multi-user API deployment and rate-limiting

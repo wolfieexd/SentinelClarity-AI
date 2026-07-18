@@ -17,6 +17,8 @@ SentinelClarity focuses on security risks that appear repeatedly in Clarity smar
 - Governance participants attempting unauthorized privilege changes.
 - Integrators relying on incorrect trait or response-handling assumptions.
 - Honest developers accidentally introducing state mutation or accounting bugs.
+- Local malware or untrusted tools attempting to flood the developer-only HTTP endpoint.
+- Corrupted repositories containing unreadable paths or oversized contract-like files that could hide scan coverage gaps.
 
 ## Covered Risk Classes
 
@@ -39,4 +41,4 @@ SentinelClarity focuses on security risks that appear repeatedly in Clarity smar
 
 ## Safety Posture
 
-SentinelClarity should be used as fast review assistance, not as the sole audit gate. The MVP intentionally favors explainable, deterministic findings over opaque automation. Future production hardening should add typed parsing, dataflow analysis, larger labeled corpora, and human approval gates for automated fixes.
+SentinelClarity should be used as fast review assistance, not as the sole audit gate. The MVP intentionally favors explainable, deterministic findings over opaque automation. The local API binds to loopback, uses strict request limits and timeouts, and is not a network service boundary. Filesystem scanning fails closed rather than silently skipping traversal errors. Future production hardening should add typed parsing, dataflow analysis, larger labeled corpora, authenticated/rate-limited service deployment, and human approval gates for automated fixes.
