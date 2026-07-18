@@ -5,7 +5,8 @@ use sentinel_ai::{ContextBuilder, HeuristicTriageClient, TriageEngine, TriagedFi
 use sentinel_clarity::ClarityAdapter;
 use sentinel_core::{Finding, SarifReport, Severity};
 use sentinel_engine::{default_registry, Scanner};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -37,6 +38,8 @@ enum Command {
         format: OutputFormat,
         #[arg(long)]
         output: Option<PathBuf>,
+        #[arg(long, help = "Write a cryptographically hashed audit evidence bundle")]
+        evidence: Option<PathBuf>,
         #[arg(long)]
         config: Option<PathBuf>,
         #[arg(long, value_enum)]
@@ -153,6 +156,7 @@ fn main() -> Result<()> {
             path,
             format,
             output,
+            evidence,
             config,
             fail_on,
             triage,
@@ -183,6 +187,18 @@ fn main() -> Result<()> {
                     render_markdown(&path, config.as_deref(), severity_label(fail_on), &findings)
                 }
             };
+
+            if let Some(evidence_path) = evidence {
+                write_audit_evidence(
+                    &evidence_path,
+                    &path,
+                    config.as_deref(),
+                    fail_on,
+                    clarinet,
+                    &scan_results,
+                    &findings,
+                )?;
+            }
 
             if let Some(output) = output {
                 std::fs::write(output, rendered)?;
@@ -247,8 +263,29 @@ fn main() -> Result<()> {
 
 #[derive(Debug)]
 struct FileScanResult {
+    path: PathBuf,
     source: String,
     findings: Vec<Finding>,
+}
+
+#[derive(Debug, Serialize)]
+struct AuditEvidence {
+    schema_version: String,
+    scanner_version: String,
+    source_root: String,
+    config_sha256: Option<String>,
+    clarinet_version: Option<String>,
+    fail_on: String,
+    passed: bool,
+    contracts: Vec<AuditedContract>,
+    findings: Vec<Finding>,
+}
+
+#[derive(Debug, Serialize)]
+struct AuditedContract {
+    path: String,
+    sha256: String,
+    findings: usize,
 }
 
 const KNOWN_RULE_IDS: [&str; 6] = [
@@ -350,7 +387,11 @@ fn scan_path(path: &Path, policy: &ScanPolicy, use_clarinet: bool) -> Result<Vec
                 .insert("source_path".to_string(), display_path.clone());
         }
 
-        results.push(FileScanResult { source, findings });
+        results.push(FileScanResult {
+            path: file,
+            source,
+            findings,
+        });
     }
 
     Ok(results)
@@ -380,6 +421,70 @@ fn clarinet_check(file: &Path) -> Result<()> {
         diagnostics.chars().take(4_096).collect()
     };
     anyhow::bail!("Clarinet rejected {}: {detail}", file.display());
+}
+
+fn write_audit_evidence(
+    output: &Path,
+    source_root: &Path,
+    config_path: Option<&Path>,
+    fail_on: Severity,
+    clarinet_checked: bool,
+    scan_results: &[FileScanResult],
+    findings: &[Finding],
+) -> Result<()> {
+    let config_sha256 = config_path
+        .map(hash_file)
+        .transpose()?
+        .map(|hash| hash.to_string());
+    let clarinet_version = if clarinet_checked {
+        Some(clarinet_version()?)
+    } else {
+        None
+    };
+    let contracts = scan_results
+        .iter()
+        .map(|result| AuditedContract {
+            path: result.path.to_string_lossy().replace('\\', "/"),
+            sha256: sha256_hex(result.source.as_bytes()),
+            findings: result.findings.len(),
+        })
+        .collect();
+    let evidence = AuditEvidence {
+        schema_version: "1.0".to_string(),
+        scanner_version: env!("CARGO_PKG_VERSION").to_string(),
+        source_root: source_root.to_string_lossy().replace('\\', "/"),
+        config_sha256,
+        clarinet_version,
+        fail_on: severity_label(fail_on).to_string(),
+        passed: !has_blocking_findings(findings, fail_on),
+        contracts,
+        findings: findings.to_vec(),
+    };
+    let serialized = serde_json::to_string_pretty(&evidence)?;
+    std::fs::write(output, serialized)
+        .with_context(|| format!("failed to write audit evidence to {}", output.display()))?;
+    Ok(())
+}
+
+fn clarinet_version() -> Result<String> {
+    let output = ProcessCommand::new("clarinet")
+        .arg("--version")
+        .output()
+        .context("failed to query Clarinet version")?;
+    if !output.status.success() {
+        anyhow::bail!("Clarinet version command failed")
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+fn hash_file(path: &Path) -> Result<String> {
+    let bytes = std::fs::read(path)
+        .with_context(|| format!("failed to read {} for hashing", path.display()))?;
+    Ok(sha256_hex(&bytes))
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 fn serve(port: u16) -> Result<()> {
@@ -1173,5 +1278,13 @@ mod tests {
 
         assert_eq!(status, "400 Bad Request");
         assert!(body.contains("UTF-8"));
+    }
+
+    #[test]
+    fn sha256_evidence_hash_is_stable() {
+        assert_eq!(
+            sha256_hex(b"abc"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
     }
 }

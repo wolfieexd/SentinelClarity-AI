@@ -33,6 +33,7 @@ The local `serve` API is deliberately constrained to reduce its attack surface:
 - The Clarity adapter rejects unbalanced parentheses and unterminated strings before rule execution.
 - Rule matching uses sanitized code, preventing comments and string literals from fabricating apparent dangerous operations.
 - `scan --clarinet` optionally invokes the installed Clarinet compiler with direct process arguments, requiring its syntax validation before SentinelClarity analysis proceeds.
+- `scripts/audit-check.sh` is the reproducible operator gate: it runs locked dependencies, Clarinet validation, policy enforcement, SARIF output, and hashed evidence in one command.
 
 ## Local Command
 

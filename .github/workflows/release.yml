@@ -32,8 +32,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build --locked --release --package sentinel-cli
+      - name: Create SHA-256 checksum
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path checksums | Out-Null
+          $hash = (Get-FileHash -LiteralPath '${{ matrix.binary }}' -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  ${{ matrix.artifact }}" | Set-Content -NoNewline -Path 'checksums/${{ matrix.artifact }}.sha256'
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.binary }}
+          path: |
+            ${{ matrix.binary }}
+            checksums/${{ matrix.artifact }}.sha256
+          retention-days: 30

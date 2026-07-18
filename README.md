@@ -101,6 +101,7 @@ cargo run --package sentinel-cli -- scan . --format sarif
 cargo run --package sentinel-cli -- scan ./contracts --format markdown
 cargo run --package sentinel-cli -- scan ./contracts --format markdown --triage
 cargo run --package sentinel-cli -- scan ./contracts --clarinet --format markdown
+cargo run --package sentinel-cli -- scan ./contracts --config sentinel.toml --clarinet --evidence artifacts/audit-evidence.json --format sarif
 cargo run --package sentinel-cli -- init
 cargo run --package sentinel-cli -- init --validate --config sentinel.toml
 cargo run --package sentinel-cli -- completions powershell
@@ -142,6 +143,10 @@ Planned production commands:
 | `version` | Print the CLI version |
 
 Pass `--clarinet` to `scan` when the official Clarinet toolchain is installed. SentinelClarity then requires each contract to pass `clarinet check` before producing its own findings. The integration uses direct process arguments (never a shell) and limits compiler diagnostics in errors.
+
+Pass `--evidence PATH` to produce a JSON audit bundle. It records the scanner and Clarinet versions, SHA-256 hashes for every scanned contract and the policy file, findings, gate threshold, and pass/fail result. Pair `--clarinet` and `--evidence` for the recommended audit-grade scan command.
+
+For repeatable operator use, run `./scripts/audit-check.sh [CONTRACT_OR_DIRECTORY] [CONFIG] [SARIF_OUTPUT] [EVIDENCE_OUTPUT]`. It requires Clarinet, uses the locked Rust dependency graph, compiler-validates the target, writes SARIF plus evidence, and fails on the configured severity threshold.
 
 ## Configuration
 
@@ -362,6 +367,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 5 | Security fortress | Bounded inputs, fail-closed scanning, dependency audit, CodeQL, disclosure policy |
 | Sprint 6 | Production core | Enforced policies, syntax validation, false-positive resistance, locked builds |
 | Sprint 7 | Audit readiness | Clarinet validation bridge, audit evidence roadmap |
+| Sprint 8 | Audit evidence | Cryptographic evidence bundles and release checksums |
 
 ## Future Production Hardening
 
@@ -457,6 +463,13 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Define evidence-driven milestones for semantic analysis, invariants, and audit reports.
 - [ ] Add Clarinet Simnet invariant and adversarial property-test harness.
 - [ ] Add compiler-backed semantic call, storage, and authority graph.
+
+### Sprint 8 - Audit Evidence
+
+- [x] Add optional SHA-256 audit evidence bundle generation.
+- [x] Record source, configuration, scanner, and compiler provenance in audit output.
+- [x] Add per-platform SHA-256 checksums to release artifacts.
+- [ ] Add signed provenance attestations and SBOM publication.
 
 ## OpenAI Build Week 2026
 

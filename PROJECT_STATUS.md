@@ -17,6 +17,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | Demo flow | Working | `scripts/judge-demo.sh` validates config, scans the demo DAO, and writes artifacts. |
 | Security checks | Working | Secret scanning, dependency advisory auditing, CodeQL, and smart-contract security regressions run in CI. |
 | Clarinet validation | Working locally | `scan --clarinet` requires installed Clarinet syntax validation before analysis. |
+| Audit evidence | Working | `scan --evidence` emits a SHA-256 provenance bundle for review and retention. |
 | CI | Working | Format, Clippy, tests, release build, and artifacts run in GitHub Actions. |
 | Release workflow | Ready | Tag/manual workflow builds platform binaries. |
 

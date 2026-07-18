@@ -9,6 +9,8 @@ SentinelClarity can become a strong, independent audit **assistant**. It must no
 - Rule policy enforcement from `sentinel.toml`.
 - Structural source validation that ignores comments and strings during rule matching.
 - Optional official-toolchain validation through `sentinel-clarity scan --clarinet`.
+- SHA-256 audit evidence bundles covering the source, policy, compiler version, findings, and gate result.
+- SHA-256 checksums attached to every release artifact.
 - SARIF, JSON, markdown, fix verification, dependency advisory checks, secret scanning, and CodeQL.
 
 ## Audit-Grade Milestones
