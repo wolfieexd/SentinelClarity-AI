@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
         run: ./scripts/generate-sbom.ps1
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sentinel-clarity-sbom
           path: artifacts/sentinel-sbom.cdx.json
