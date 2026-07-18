@@ -120,20 +120,23 @@
     <rect class="scan-bar" x="38" y="408" width="1036" height="12" rx="6" fill="url(#accent)"/>
   </g>
 
-  <g class="badge b1" transform="translate(780 72)">
-    <rect width="155" height="42" rx="21" fill="#2dd4bf" opacity="0.16" stroke="#2dd4bf"/>
-    <text class="sans cyan" x="20" y="27" font-size="16" font-weight="700">SARIF output</text>
+  <g transform="translate(650 48)">
+    <rect width="520" height="74" rx="28" fill="#08111f" opacity="0.68"/>
   </g>
-  <g class="badge b2" transform="translate(952 72)">
-    <rect width="154" height="42" rx="21" fill="#a78bfa" opacity="0.16" stroke="#a78bfa"/>
-    <text class="sans purple" x="20" y="27" font-size="16" font-weight="700">AI triage</text>
+  <g class="badge b1" transform="translate(674 64)">
+    <rect width="126" height="42" rx="21" fill="#0f2531" stroke="#22d3ee" stroke-opacity="0.28"/>
+    <text class="sans cyan" x="18" y="27" font-size="15" font-weight="700">SARIF</text>
   </g>
-  <g class="badge b3" transform="translate(780 636)">
-    <rect width="170" height="42" rx="21" fill="#34d399" opacity="0.16" stroke="#34d399"/>
-    <text class="sans green" x="20" y="27" font-size="16" font-weight="700">CI green</text>
+  <g class="badge b2" transform="translate(816 64)">
+    <rect width="126" height="42" rx="21" fill="#1f1b38" stroke="#a78bfa" stroke-opacity="0.28"/>
+    <text class="sans purple" x="18" y="27" font-size="15" font-weight="700">AI triage</text>
   </g>
-  <g class="badge b4" transform="translate(970 636)">
-    <rect width="192" height="42" rx="21" fill="#fbbf24" opacity="0.16" stroke="#fbbf24"/>
-    <text class="sans yellow" x="20" y="27" font-size="16" font-weight="700">Judge ready</text>
+  <g class="badge b3" transform="translate(958 64)">
+    <rect width="86" height="42" rx="21" fill="#0f2a24" stroke="#34d399" stroke-opacity="0.28"/>
+    <text class="sans green" x="18" y="27" font-size="15" font-weight="700">CI</text>
+  </g>
+  <g class="badge b4" transform="translate(1060 64)">
+    <rect width="86" height="42" rx="21" fill="#2d2614" stroke="#fbbf24" stroke-opacity="0.28"/>
+    <text class="sans yellow" x="18" y="27" font-size="15" font-weight="700">Demo</text>
   </g>
 </svg>
