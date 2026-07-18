@@ -220,6 +220,8 @@ The current development environment used for the initial scaffold did not have `
 
 ## Demo
 
+![SentinelClarity animated terminal demo](artifacts/screenshots/sentinel-demo.svg)
+
 The repository includes a repeatable demo script for the current offline scanner and triage flow:
 
 ```bash
@@ -244,7 +246,8 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | `artifacts/demo-output.md` | Sample AI triage report for the vulnerable DAO |
 | `artifacts/fix-plan.md` | Mock remediation PR body |
 | `artifacts/sentinel-results.sarif` | Sample SARIF 2.1.0 output with source locations |
-| `artifacts/screenshots/README.md` | Screenshot capture checklist for README and Devpost |
+| `artifacts/screenshots/sentinel-demo.svg` | Animated terminal-style README demo |
+| `artifacts/screenshots/README.md` | Screenshot and demo asset checklist for README and Devpost |
 
 ## Project Docs
 

@@ -1,6 +1,10 @@
-# Demo Screenshot Placeholders
+# Demo Visual Assets
 
-Add visual assets here before Devpost submission.
+Visual assets for the GitHub README and Devpost submission.
+
+## Included
+
+- `sentinel-demo.svg` - animated terminal-style README demo showing the scan and AI triage flow.
 
 Recommended captures:
 
