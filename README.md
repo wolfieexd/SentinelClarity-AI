@@ -27,7 +27,7 @@ The long-term goal is a continuous security engineer for Clarity contracts:
 
 ## Current Status
 
-This repository has completed Sprint 9 audit-assurance hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, seven focused security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, and audit scripts are in place. The scanner and local API enforce bounded input handling and fail closed on unreadable paths; scanning policies apply `sentinel.toml` rule enablement and severity overrides, malformed source is rejected before analysis, and comments or strings cannot create rule signals. CI adds dependency advisory auditing, CodeQL analysis, SBOM generation, locked builds, and Dependabot maintenance. Full compiler-derived dataflow analysis, mainnet corpus expansion, and approval-gated remediation remain future production work.
+This repository has completed Sprint 10 production-assurance hardening of the OpenAI Build Week implementation plan. The workspace scaffold, lightweight Clarity adapter, rule registry, seven focused security rules, CLI file scanning, corpus validation, rule documentation, offline triage engine, fix-package templates, config validation, shell completions, security workflow, health API, fix verification, audit scripts, and Clarinet Simnet adversarial invariants are in place. The scanner and local API enforce bounded input handling and fail closed on unreadable paths; scanning policies apply `sentinel.toml` rule enablement and severity overrides, malformed source is rejected before analysis, and comments or strings cannot create rule signals. CI adds dependency advisory auditing, CodeQL analysis, SBOM generation, locked builds, a CVE-clean pinned Simnet test stack, and Dependabot maintenance. Full compiler-derived dataflow analysis, mainnet corpus expansion, and approval-gated remediation remain future production work.
 
 | Area | Status |
 | --- | --- |
@@ -40,7 +40,7 @@ This repository has completed Sprint 9 audit-assurance hardening of the OpenAI B
 | GitHub Action | Local composite action with configurable path, config, format, and fail threshold |
 | AI triage and fixes | Offline triage engine and fix templates |
 | Test corpus | Handcrafted, demo, and regression fixtures |
-| Security validation | Secret scan, dependency audit, CodeQL, bounded local API, and smart-contract security regressions |
+| Security validation | Secret scan, dependency audit, CodeQL, bounded local API, smart-contract regressions, and Clarinet Simnet authorization invariants |
 
 For a precise capability matrix, see `PROJECT_STATUS.md`.
 
@@ -55,6 +55,7 @@ sentinel-clarity/
 |-- sentinel-cli/          # CLI entrypoint and command surface
 |-- sentinel-action/       # GitHub Action wrapper metadata
 |-- sentinel-test-corpus/  # Contract corpus and expected finding fixtures
+|-- audit-simnet/          # Clarinet Simnet adversarial invariant suite
 |-- docs/                  # ADRs and rule documentation
 |-- artifacts/             # Demo reports, SARIF, screenshots, and fix plans
 `-- sentinel.toml          # Default scanner configuration
@@ -283,6 +284,19 @@ SentinelClarity includes a dedicated security validation layer:
 - The local API is loopback-only, has a five-second I/O timeout, accepts only bounded UTF-8 requests, rejects ambiguous HTTP framing, and returns JSON-escaped errors.
 - `sentinel-test-corpus` verifies that vulnerable fixtures trigger expected findings and fixed fixtures clear targeted security risks.
 - `docs/security-testing.md` documents what is covered and what remains future hardening work.
+- `.github/workflows/simnet.yml` runs locked, CVE-gated Clarinet SDK tests against authorization and accounting invariants.
+
+### Clarinet Simnet Assurance
+
+The standalone `audit-simnet` project executes a deterministic authorization-vault scenario using the official Clarinet SDK. It checks adversarial callers across boundary values, accounting behavior for the authorized principal, and an intentional guard-removal mutation that is demonstrably exploitable. The configured Simnet accounts are Clarinet's public development accounts only; they are never production credentials. Use Node.js `22.22.2` or newer with the pinned package manager.
+
+```bash
+cd audit-simnet
+corepack npm ci
+corepack npm audit --audit-level=high
+corepack npm run check
+corepack npm test
+```
 
 ## Comparison
 
@@ -371,6 +385,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 7 | Audit readiness | Clarinet validation bridge, audit evidence roadmap |
 | Sprint 8 | Audit evidence | Cryptographic evidence bundles and release checksums |
 | Sprint 9 | Audit assurance | Compiler manifests, authorization rule, SBOM, attestations |
+| Sprint 10 | Production assurance | Clarinet Simnet invariants, mutation sensitivity, locked CVE-gated CI |
 
 ## Future Production Hardening
 
@@ -379,6 +394,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - Add approval-gated GitHub PR creation for generated fixes.
 - Expand corpus with labeled mainnet contracts and fuzzed edge cases.
 - Add richer editor-oriented routes to the `serve` API.
+- Expand Simnet invariants across protocol-specific contracts and mainnet-derived fixtures.
 
 ## Sprint Checklist
 
@@ -464,7 +480,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Add optional Clarinet toolchain validation before scanning.
 - [x] Keep compiler invocation shell-free and diagnostic output bounded.
 - [x] Define evidence-driven milestones for semantic analysis, invariants, and audit reports.
-- [ ] Add Clarinet Simnet invariant and adversarial property-test harness.
+- [x] Add Clarinet Simnet invariant and adversarial property-test harness.
 - [ ] Add compiler-backed semantic call, storage, and authority graph.
 
 ### Sprint 8 - Audit Evidence
@@ -481,6 +497,14 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 - [x] Generate a CycloneDX SBOM on every push and pull request.
 - [x] Add keyless GitHub build attestations to tagged release binaries.
 - [x] Remove “demo” wording from the animated README terminal asset.
+
+### Sprint 10 - Production Assurance
+
+- [x] Add a pinned, CVE-gated Clarinet SDK and Vitest test harness.
+- [x] Verify adversarial callers and authorization/accounting boundary values in Simnet.
+- [x] Add a deliberate authorization-removal mutation fixture with a reproducible exploit.
+- [x] Add locked Simnet assurance CI on pushes and relevant pull requests.
+- [x] Push Sprint 10 checkpoint to GitHub.
 
 ## OpenAI Build Week 2026
 

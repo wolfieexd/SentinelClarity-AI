@@ -1,0 +1,25 @@
+[project]
+name = "sentinel-audit-simnet"
+description = "Adversarial Simnet invariants for SentinelClarity audit assurance"
+authors = ["SentinelClarity"]
+telemetry = false
+cache_dir = ".cache"
+
+[contracts.authorization-vault]
+path = "contracts/authorization-vault.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.unsafe-authorization-vault]
+path = "contracts/unsafe-authorization-vault.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = true
+trusted_sender = false
+trusted_caller = false
+callee_filter = false

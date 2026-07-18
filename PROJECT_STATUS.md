@@ -1,6 +1,6 @@
 # SentinelClarity Project Status
 
-SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contracts, explaining security findings, and producing review-friendly outputs for developers and judges.
+SentinelClarity is a security-focused hackathon MVP for scanning Clarity smart contracts, explaining findings, and producing review-friendly outputs for developers and judges.
 
 ## What Works Today
 
@@ -18,6 +18,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | Security checks | Working | Secret scanning, dependency advisory auditing, CodeQL, and smart-contract security regressions run in CI. |
 | Clarinet validation | Working locally | `scan --clarinet` requires installed Clarinet syntax validation before analysis. |
 | Audit evidence | Working | `scan --evidence` emits a SHA-256 provenance bundle for review and retention. |
+| Clarinet Simnet assurance | Working | Locked, CVE-gated adversarial authorization and accounting invariants run in CI. |
 | Supply-chain evidence | Working | CI publishes a CycloneDX SBOM; tagged release binaries include SHA-256 checksums and GitHub build attestations. |
 | CI | Working | Format, Clippy, tests, release build, and artifacts run in GitHub Actions. |
 | Release workflow | Ready | Tag/manual workflow builds platform binaries. |
@@ -31,6 +32,7 @@ SentinelClarity is a demo-ready hackathon MVP for scanning Clarity smart contrac
 | AI integration | Offline `TriageClient` implementation | Live OpenAI-backed triage with structured responses and policy controls. |
 | PR automation | Fix-package templates and mock PR plan | Real GitHub PR creation with patch application and re-scan verification. |
 | Corpus | Handcrafted, demo, and regression fixtures | Mainnet-scale labeled corpus and fuzzed edge cases. |
+| Contract assurance | Deterministic authorization-vault invariants and mutation sensitivity | Protocol-specific invariants and property generation across real contracts. |
 | HTTP server | Loopback-only `/health`, `/version`, and bounded `POST /scan` endpoint | Authenticated, rate-limited editor/API integrations. |
 
 ## Judge-Ready Claim
@@ -39,4 +41,4 @@ SentinelClarity is fully functional as a polished Build Week MVP: it can be clon
 
 ## Recommended Next Milestone
 
-The next production milestone should connect the existing `TriageClient` abstraction to a live OpenAI structured-output workflow, then add GitHub PR automation that applies the generated fix plan, runs the scanner again, and posts a before/after summary.
+The next production milestone is compiler-derived semantic analysis with interprocedural authority, storage, and external-call graphs. Live AI triage and PR automation should remain approval-gated after that foundation is in place.

@@ -12,6 +12,7 @@ SentinelClarity can become a strong, independent audit **assistant**. It must no
 - SHA-256 audit evidence bundles covering the source, policy, compiler version, findings, and gate result.
 - CycloneDX SBOMs, SHA-256 checksums, and keyless GitHub build attestations for release artifacts.
 - SARIF, JSON, markdown, fix verification, dependency advisory checks, secret scanning, and CodeQL.
+- A locked Clarinet Simnet suite with CVE-gated dependencies, adversarial authorization/accounting invariants, and a reproducible authorization-removal mutation exploit.
 
 ## Audit-Grade Milestones
 
@@ -30,4 +31,4 @@ An audit run should fail when compiler validation fails, relevant tests are miss
 
 ## Next Core Build
 
-The highest-value next implementation is a Clarinet Simnet test harness that executes contract-specific invariants against generated adversarial inputs. That turns detected patterns into demonstrated exploitability or documented non-exploitability.
+The highest-value next implementation is compiler-derived semantic analysis that builds typed call, storage, and authority graphs. That will let SentinelClarity connect static findings to interprocedural evidence and prioritize the most credible attack paths.

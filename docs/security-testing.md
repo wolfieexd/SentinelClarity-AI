@@ -4,7 +4,7 @@ SentinelClarity includes cybersecurity-oriented tests for both the scanner and t
 
 ## What Runs in CI
 
-The `Security` workflow runs on every push to `main` and every pull request.
+The `Security` workflow runs on every push to `main` and every pull request. The separate `Simnet Assurance` workflow applies the contract-invariant gate.
 
 | Check | Purpose |
 | --- | --- |
@@ -13,6 +13,7 @@ The `Security` workflow runs on every push to `main` and every pull request.
 | CodeQL | Runs scheduled and pull-request static analysis of the Rust workspace. |
 | Smart-contract security regressions | Runs targeted Clarity corpus tests that verify vulnerable fixtures emit expected findings and fixed fixtures clear targeted risks. |
 | Fix verification | The CLI can compare before/after contracts and fail if selected risks remain. |
+| Clarinet Simnet assurance | Uses a locked, CVE-gated Clarinet SDK suite to validate authorization and accounting invariants against adversarial principals and boundary values. |
 
 ## Runtime Boundary Tests
 
@@ -34,6 +35,7 @@ The local `serve` API is deliberately constrained to reduce its attack surface:
 - Rule matching uses sanitized code, preventing comments and string literals from fabricating apparent dangerous operations.
 - `scan --clarinet` optionally invokes the installed Clarinet compiler with direct process arguments, requiring its syntax validation before SentinelClarity analysis proceeds.
 - `scripts/audit-check.sh` is the reproducible operator gate: it runs locked dependencies, Clarinet validation, policy enforcement, SARIF output, and hashed evidence in one command.
+- `audit-simnet` uses Clarinet's public development accounts only. It validates the protected authorization vault, then runs an intentional guard-removal mutant to prove the suite can reproduce an unauthorized withdrawal.
 
 ## Local Command
 
@@ -65,3 +67,4 @@ Additional regression tests verify that fixed handcrafted fixtures clear targete
 - Live OpenAI API integration testing
 - Automated PR remediation security review
 - Authenticated multi-user API deployment and rate-limiting
+- Protocol-specific Simnet properties and generated test vectors for real deployment contracts
