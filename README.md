@@ -39,7 +39,9 @@ This repository is in Sprint 3 of the OpenAI Build Week implementation plan. The
 | CLI | Scans `.clar` files, validates config, and generates completions |
 | GitHub Action | Template scaffolded |
 | AI triage and fixes | Offline triage engine and fix templates |
-| Test corpus | Handcrafted vulnerable/fixed fixtures |
+| Test corpus | Handcrafted, demo, and regression fixtures |
+
+For a precise capability matrix, see `PROJECT_STATUS.md`.
 
 ## Repository Layout
 
@@ -185,6 +187,28 @@ The intended workflow is:
 4. Post a pull request summary.
 5. In later sprints, open annotated fix PRs and verify fixes with a re-scan.
 
+Example workflow usage:
+
+```yaml
+name: SentinelClarity
+
+on:
+  pull_request:
+    paths:
+      - "**/*.clar"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./sentinel-action
+        with:
+          path: "."
+          format: "sarif"
+          fail-on: "high"
+```
+
 ## AI Triage
 
 Sprint 2 adds a deterministic triage engine that mirrors the planned structured AI response shape without requiring network credentials during CI.
@@ -207,6 +231,39 @@ cargo run --package sentinel-cli -- scan sentinel-test-corpus/contracts --format
 ```
 
 The current implementation uses `HeuristicTriageClient` behind the `TriageClient` trait. A live OpenAI client can be added behind that interface without changing scanner output contracts.
+
+## How AI Is Used
+
+SentinelClarity is AI-native, but the current repository intentionally keeps CI deterministic and credential-free:
+
+| Layer | Current Implementation | Production Direction |
+| --- | --- | --- |
+| Finding schema | Static rules emit normalized findings | Keep as the stable contract for AI and SARIF |
+| Triage | Offline `HeuristicTriageClient` | Live OpenAI structured-output triage behind `TriageClient` |
+| Fix planning | Codex-style fix package templates | Apply patches in branches and open reviewable PRs |
+| Human control | Reports and fix plans only | Approval-gated automated remediation |
+
+This design makes the demo reproducible while preserving a clean seam for OpenAI-backed reasoning.
+
+## Limitations
+
+SentinelClarity is a polished hackathon MVP, not a complete audit replacement.
+
+- The Clarity adapter is lightweight and heuristic, not a compiler-grade parser.
+- Rules prioritize explainable signal over full semantic/dataflow precision.
+- Live OpenAI API triage is not connected yet; offline triage mirrors the planned response shape.
+- PR automation is represented by fix-package templates and a mock remediation plan.
+- The corpus includes handcrafted, demo, and regression fixtures, but not a large labeled mainnet dataset.
+- Findings should be reviewed by developers or auditors before production decisions.
+
+## Comparison
+
+| Approach | Strength | Gap SentinelClarity Targets |
+| --- | --- | --- |
+| Manual audit | Deep expert review | Too slow and expensive for every pull request |
+| Generic linter | Fast syntax/style feedback | Usually lacks exploitability and remediation context |
+| SARIF-only scanner | GitHub-native reporting | Does not explain blast radius or fix strategy |
+| SentinelClarity | Static findings plus AI-style triage and fix plans | MVP still needs parser hardening and live PR automation |
 
 ## Development
 
@@ -244,6 +301,7 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Artifact | Purpose |
 | --- | --- |
 | `artifacts/demo-output.md` | Sample AI triage report for the vulnerable DAO |
+| `artifacts/demo-output.json` | Machine-readable demo triage summary |
 | `artifacts/fix-plan.md` | Mock remediation PR body |
 | `artifacts/sentinel-results.sarif` | Sample SARIF 2.1.0 output with source locations |
 | `artifacts/screenshots/sentinel-demo.svg` | Animated terminal-style README demo |
@@ -254,7 +312,10 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Document | Purpose |
 | --- | --- |
 | `SUBMISSION.md` | Devpost-ready project narrative |
+| `PROJECT_STATUS.md` | Exact MVP capability and limitation matrix |
 | `docs/architecture.md` | Mermaid architecture diagrams and implementation boundaries |
+| `docs/demo-script.md` | 60-second judge walkthrough |
+| `docs/threat-model.md` | Assets, adversaries, covered risks, and out-of-scope threats |
 | `docs/adr/0001-architecture.md` | Architecture decision record |
 | `docs/rules/` | Security rule catalog |
 
@@ -274,6 +335,16 @@ The demo validates `sentinel.toml`, scans the handcrafted corpus with AI-style m
 | Sprint 1 | Parser, rule engine, six security rules | Heuristic scanner, fixtures, docs |
 | Sprint 2 | GPT triage, Codex fix generation, PR bot | Offline triage, fix templates, CLI output |
 | Sprint 3 | Hardening, corpus, demo, submission | Demo, README, Devpost submission |
+| Sprint 4 | Production hardening | Live OpenAI triage, parser precision, PR automation |
+
+## Future Sprint 4
+
+- Replace lightweight Clarity extraction with parser-backed semantic analysis.
+- Connect `TriageClient` to live OpenAI structured outputs.
+- Add approval-gated GitHub PR creation for generated fixes.
+- Expand corpus with labeled mainnet contracts and fuzzed edge cases.
+- Add before/after remediation verification that re-scans patched contracts.
+- Expose the scanner through the `serve` API for IDE and editor integrations.
 
 ## Sprint Checklist
 

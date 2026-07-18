@@ -1,0 +1,58 @@
+{
+  "project": "SentinelClarity",
+  "target": "sentinel-test-corpus/contracts/demo/vulnerable-dao.clar",
+  "config": "sentinel.toml",
+  "fail_on": "critical",
+  "findings": [
+    {
+      "rule_id": "SC-ACCESS",
+      "severity": "high",
+      "exploitability": "confirmed",
+      "blast_radius": "governance",
+      "strategy": "add_access_control",
+      "confidence": 0.88
+    },
+    {
+      "rule_id": "SC-OVERFLOW",
+      "severity": "high",
+      "exploitability": "possible",
+      "blast_radius": "state_corruption",
+      "strategy": "use_checked_math",
+      "confidence": 0.68
+    },
+    {
+      "rule_id": "SC-REENTRANCY",
+      "severity": "critical",
+      "exploitability": "probable",
+      "blast_radius": "user_funds",
+      "strategy": "checks_effects_interactions",
+      "confidence": 0.82
+    },
+    {
+      "rule_id": "SC-UNCHECKED",
+      "severity": "medium",
+      "exploitability": "probable",
+      "blast_radius": "contract_balance",
+      "strategy": "handle_errors",
+      "confidence": 0.78
+    },
+    {
+      "rule_id": "SC-READONLY",
+      "severity": "high",
+      "exploitability": "confirmed",
+      "blast_radius": "state_corruption",
+      "strategy": "move_state_change",
+      "confidence": 0.86
+    }
+  ],
+  "summary": {
+    "total_findings": 5,
+    "highest_severity": "critical",
+    "outputs": [
+      "artifacts/demo-output.md",
+      "artifacts/demo-output.json",
+      "artifacts/sentinel-results.sarif",
+      "artifacts/fix-plan.md"
+    ]
+  }
+}
