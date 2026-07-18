@@ -30,7 +30,7 @@ The corpus validates these vulnerability classes:
 - `SC-TRAIT` trait implementation mismatch patterns
 - `SC-READONLY` state mutation from read-only functions
 
-Additional regression tests verify that fixed fixtures clear targeted access-control, reentrancy, unchecked-call, trait, and read-only findings. Arithmetic remains intentionally conservative because the MVP rule flags arithmetic for review even when a local guard is present.
+Additional regression tests verify that fixed handcrafted fixtures clear targeted access-control, reentrancy, unchecked-call, trait, and read-only findings. The fixed DAO demo intentionally retains conservative access-control and arithmetic review signals because the MVP rule engine does not yet follow delegated private authorization helpers or prove arithmetic guards.
 
 ## Not Yet Covered
 

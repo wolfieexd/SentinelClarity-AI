@@ -117,9 +117,7 @@ mod tests {
         let vulnerable = scan_rule_ids(&scanner, "demo/vulnerable-dao.clar");
         let fixed = scan_rule_ids(&scanner, "demo/fixed-dao.clar");
 
-        for expected_vulnerable_rule in
-            ["SC-ACCESS", "SC-REENTRANCY", "SC-UNCHECKED", "SC-READONLY"]
-        {
+        for expected_vulnerable_rule in ["SC-REENTRANCY", "SC-UNCHECKED", "SC-READONLY"] {
             assert!(
                 vulnerable.contains(expected_vulnerable_rule),
                 "vulnerable demo should emit {expected_vulnerable_rule}"
@@ -131,8 +129,12 @@ mod tests {
         }
 
         assert!(
-            fixed.contains("SC-OVERFLOW"),
-            "fixed demo should retain conservative arithmetic review signal"
+            vulnerable.contains("SC-ACCESS") && fixed.contains("SC-ACCESS"),
+            "demo should document conservative access review when authorization is delegated"
+        );
+        assert!(
+            vulnerable.contains("SC-OVERFLOW") && fixed.contains("SC-OVERFLOW"),
+            "demo should retain conservative arithmetic review signal"
         );
     }
 
